@@ -62,33 +62,52 @@ async function generateComponent(
   component: ProposalComponent,
   previousComponents: { type: string; content: string }[]
 ): Promise<string> {
+  console.log(`Generating ${component.type}...`);
+  
   const context = previousComponents
     .map(c => `${c.type.toUpperCase()}:\n${c.content}`)
     .join('\n\n');
 
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openrouterKey}`,
-    },
-    body: JSON.stringify({
-      model: 'deepseek-ai/deepseek-coder-33b-instruct',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a medical research proposal expert. Generate content for the ${component.type} section (${component.wordCount}).`
-        },
-        {
-          role: 'user',
-          content: `Research Description: ${description}\n\nPrevious sections:\n${context}\n\n${component.prompt}`
-        }
-      ]
-    })
-  });
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openrouterKey}`,
+        'HTTP-Referer': 'http://localhost:5173',
+        'X-Title': 'Medical Research Proposal Generator',
+      },
+      body: JSON.stringify({
+        model: 'deepseek-ai/deepseek-coder-33b-instruct',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a medical research proposal expert. Generate content for the ${component.type} section (${component.wordCount}).`
+          },
+          {
+            role: 'user',
+            content: `Research Description: ${description}\n\nPrevious sections:\n${context}\n\n${component.prompt}`
+          }
+        ]
+      })
+    });
 
-  const data = await response.json();
-  return data.choices[0].message.content;
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log(`OpenRouter API response for ${component.type}:`, data);
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response format from OpenRouter API');
+    }
+
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error(`Error generating ${component.type}:`, error);
+    throw error;
+  }
 }
 
 serve(async (req) => {
@@ -113,6 +132,7 @@ serve(async (req) => {
       .single();
 
     if (apiKeysError || !apiKeys?.openrouter_key) {
+      console.error('API keys error:', apiKeysError);
       throw new Error('API keys not found');
     }
 
@@ -131,8 +151,6 @@ serve(async (req) => {
     const generatedComponents: { type: string; content: string }[] = [];
     
     for (const component of PROPOSAL_COMPONENTS) {
-      console.log(`Generating ${component.type}...`);
-      
       try {
         const content = await generateComponent(
           apiKeys.openrouter_key,
@@ -142,7 +160,7 @@ serve(async (req) => {
         );
 
         // Update the component in the database
-        await supabaseClient
+        const { error: updateError } = await supabaseClient
           .from('research_proposal_components')
           .update({
             content,
@@ -152,9 +170,26 @@ serve(async (req) => {
           .eq('research_request_id', requestId)
           .eq('component_type', component.type);
 
+        if (updateError) {
+          console.error(`Error updating ${component.type}:`, updateError);
+          throw updateError;
+        }
+
         generatedComponents.push({ type: component.type, content });
       } catch (error) {
         console.error(`Error generating ${component.type}:`, error);
+        
+        // Update the component status to error
+        await supabaseClient
+          .from('research_proposal_components')
+          .update({
+            status: 'error',
+            content: `Error generating content: ${error.message}`,
+            updated_at: new Date().toISOString()
+          })
+          .eq('research_request_id', requestId)
+          .eq('component_type', component.type);
+
         throw error;
       }
     }
