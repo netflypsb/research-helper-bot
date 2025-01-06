@@ -1,29 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+import Header from "@/components/Header";
 
 const Index = () => {
-  const navigate = useNavigate();
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white">
+      <Header />
       <div className="container mx-auto px-4 py-16">
-        <nav className="flex justify-between items-center mb-16">
-          <h1 className="text-2xl font-bold text-sky-900">MedResearch AI</h1>
-          <div className="space-x-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/login")}
-              className="text-sky-700 hover:text-sky-900"
-            >
-              Login
-            </Button>
-            <Button onClick={() => navigate("/signup")} className="bg-primary hover:bg-sky-700">
-              Sign Up
-            </Button>
-          </div>
-        </nav>
-
         <div className="max-w-3xl mx-auto text-center mb-16">
           <h2 className="text-4xl font-bold text-sky-900 mb-6">
             Accelerate Your Medical Research with AI
@@ -32,9 +15,6 @@ const Index = () => {
             Generate comprehensive literature reviews in minutes, not months.
             Powered by advanced AI to help medical researchers focus on what matters most.
           </p>
-          <Button onClick={() => navigate("/signup")} size="lg" className="bg-primary hover:bg-sky-700">
-            Get Started
-          </Button>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">

@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import Header from "@/components/Header";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -131,26 +132,9 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white">
-      <nav className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-sky-900">MedResearch AI</h1>
-          <Button 
-            variant="ghost" 
-            className="text-sky-700 hover:text-sky-900"
-            onClick={handleLogout}
-          >
-            Logout
-          </Button>
-        </div>
-      </nav>
-
+      <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
           <Card className="p-6">
