@@ -6,10 +6,23 @@ import { performSearch } from './serper.ts';
 import type { ResearchRequest, ApiKeys } from './types.ts';
 
 async function generateSearchTerms(description: string, openrouterKey: string): Promise<string> {
+  console.log('Generating search terms for description:', description);
+  
+  if (!openrouterKey) {
+    throw new Error('OpenRouter API key is required for search terms generation');
+  }
+
   const systemPrompt = 'You are a research strategist. Generate relevant search terms for academic research.';
   const prompt = `Generate 3-5 specific search terms for the following research topic: ${description}`;
   
-  return await generateWithOpenRouter(prompt, systemPrompt, openrouterKey);
+  try {
+    const terms = await generateWithOpenRouter(prompt, systemPrompt, openrouterKey);
+    console.log('Generated search terms:', terms);
+    return terms;
+  } catch (error) {
+    console.error('Error generating search terms:', error);
+    throw new Error(`Failed to generate search terms: ${error.message}`);
+  }
 }
 
 async function synthesizeLiteratureReview(
@@ -36,10 +49,7 @@ Follow this structure strictly:
 4. Building on Existing Work (300-400 words):
 - Explain how the proposed study addresses identified gaps
 - Discuss potential contributions to the field
-- Connect with existing theoretical frameworks
-
-Total word count should be between 1,000-1,500 words.
-Use academic language and proper citations where relevant.`;
+- Connect with existing theoretical frameworks`;
 
   return await generateWithOpenRouter(
     `Create a structured literature review for the topic: ${description}\n\nBased on these findings:\n${context}`,
@@ -69,9 +79,7 @@ a) General Objective:
 b) Specific Objectives:
 - List 3-4 measurable and precise goals
 - Directly related to research questions
-- Logically support the general objective
-
-Format the response with clear headings for Title and Objectives sections.`;
+- Logically support the general objective`;
 
   return await generateWithOpenRouter(
     `Generate a title and objectives based on this research description:\n${description}\n\nAnd this literature review:\n${literatureReview}`,
@@ -103,10 +111,11 @@ serve(async (req) => {
 
     if (apiKeysError || !apiKeys) {
       console.error('API keys error:', apiKeysError);
-      return new Response(
-        JSON.stringify({ error: 'API keys not found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
+      throw new Error('API keys not found. Please ensure you have set up your OpenRouter API key in the settings.');
+    }
+
+    if (!apiKeys.openrouter_key) {
+      throw new Error('OpenRouter API key is not set. Please add your OpenRouter API key in the settings.');
     }
 
     // Create research request
@@ -192,6 +201,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    console.error('Error in generate-review function:', error);
     return handleError(error);
   }
 });
