@@ -20,7 +20,7 @@ export async function generateWithOpenRouter(
         'HTTP-Referer': 'https://lovable.dev',
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-2', // Updated to a valid model
+        model: 'meta-llama/llama-3.2-1b-instruct',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
