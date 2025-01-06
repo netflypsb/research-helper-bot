@@ -30,7 +30,6 @@ async function generateSearchTerms(description: string, openrouterKey: string) {
 }
 
 async function performSearch(searchTerms: string, serpKey: string, serperKey: string) {
-  // Use Serper for academic search
   const response = await fetch('https://google.serper.dev/search', {
     method: 'POST',
     headers: {
@@ -39,7 +38,7 @@ async function performSearch(searchTerms: string, serpKey: string, serperKey: st
     },
     body: JSON.stringify({
       q: searchTerms,
-      num: 5
+      num: 8 // Increased number of results for better coverage
     })
   });
 
@@ -50,6 +49,29 @@ async function performSearch(searchTerms: string, serpKey: string, serperKey: st
 async function synthesizeResults(searchResults: any[], description: string, openrouterKey: string) {
   const context = searchResults.map(result => result.snippet).join('\n');
   
+  const systemPrompt = `You are a research synthesizer tasked with creating comprehensive literature reviews. 
+Follow this structure strictly:
+
+1. Title: "Literature Review: [Research Topic]"
+
+2. Overview of Relevant Studies (400-500 words):
+- Synthesize and present key findings from recent research
+- Highlight methodologies used
+- Present major theoretical frameworks
+
+3. Identification of Research Gaps (300-400 words):
+- Analyze limitations in current research
+- Identify unexplored areas
+- Point out methodological gaps
+
+4. Building on Existing Work (300-400 words):
+- Explain how the proposed study addresses identified gaps
+- Discuss potential contributions to the field
+- Connect with existing theoretical frameworks
+
+Total word count should be between 1,000-1,500 words.
+Use academic language and proper citations where relevant.`;
+
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -60,10 +82,10 @@ async function synthesizeResults(searchResults: any[], description: string, open
       model: 'mistralai/mistral-7b-instruct',
       messages: [{
         role: 'system',
-        content: 'You are a research synthesizer. Create a comprehensive literature review based on the provided search results.'
+        content: systemPrompt
       }, {
         role: 'user',
-        content: `Create a literature review for the topic: ${description}\n\nBased on these findings:\n${context}`
+        content: `Create a structured literature review for the topic: ${description}\n\nBased on these findings:\n${context}`
       }]
     })
   });
