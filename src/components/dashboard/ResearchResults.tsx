@@ -1,48 +1,65 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Download } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 
+interface ProposalComponent {
+  id: string;
+  component_type: string;
+  content: string | null;
+  status: string;
+}
+
 export const ResearchResults = () => {
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [components, setComponents] = useState<ProposalComponent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadReviews();
+    loadComponents();
   }, []);
 
-  const loadReviews = async () => {
+  const loadComponents = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    const { data, error } = await supabase
+    const { data: requests, error: requestsError } = await supabase
       .from("research_requests")
-      .select("*")
+      .select("id")
       .eq("user_id", session.user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    if (error) {
-      console.error("Error loading reviews:", error);
+    if (requestsError || !requests.length) {
+      setIsLoading(false);
       return;
     }
 
-    setReviews(data || []);
+    const { data: components, error: componentsError } = await supabase
+      .from("research_proposal_components")
+      .select("*")
+      .eq("research_request_id", requests[0].id)
+      .order('component_type', { ascending: true });
+
+    if (componentsError) {
+      console.error("Error loading components:", componentsError);
+      return;
+    }
+
+    setComponents(components || []);
     setIsLoading(false);
   };
 
-  const handleDownload = (review: string) => {
-    // Create a blob with the review content
-    const blob = new Blob([review], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'literature-review.docx';
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+  const renderComponent = (component: ProposalComponent) => {
+    if (component.status === 'pending') {
+      return <p className="text-amber-600">Generating {component.component_type}...</p>;
+    }
+
+    return (
+      <div className="prose prose-sky max-w-none">
+        <div className="whitespace-pre-wrap">{component.content}</div>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -50,42 +67,47 @@ export const ResearchResults = () => {
   }
 
   return (
-    <Card className="p-6">
-      <h2 className="text-xl font-semibold text-sky-900 mb-6">Generated Literature Reviews</h2>
-      <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-        {reviews.length === 0 ? (
-          <p className="text-gray-500">No reviews generated yet.</p>
+    <Card className="p-6 h-full">
+      <h2 className="text-xl font-semibold text-sky-900 mb-6">Research Proposal</h2>
+      <ScrollArea className="h-[calc(100vh-12rem)] w-full rounded-md border p-4">
+        {components.length === 0 ? (
+          <p className="text-gray-500">No proposal generated yet.</p>
         ) : (
-          <div className="space-y-6">
-            {reviews.map((review, index) => (
-              <div key={review.id} className="border-b pb-4 last:border-b-0">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium text-sky-800">Research #{reviews.length - index}</h3>
-                  {review.result && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2"
-                      onClick={() => handleDownload(review.result)}
-                    >
-                      <Download className="h-4 w-4" />
-                      Download
-                    </Button>
+          <Tabs defaultValue="preview" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="preview">Preview</TabsTrigger>
+              <TabsTrigger value="sections">Sections</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="preview" className="space-y-8">
+              {components.map((component) => (
+                <div key={component.id} className="space-y-2">
+                  <h3 className="text-lg font-semibold text-sky-800 capitalize">
+                    {component.component_type.replace(/_/g, ' ')}
+                  </h3>
+                  {renderComponent(component)}
+                </div>
+              ))}
+            </TabsContent>
+
+            <TabsContent value="sections">
+              {components.map((component) => (
+                <div key={component.id} className="mb-6 p-4 border rounded-lg">
+                  <h3 className="text-lg font-semibold text-sky-800 capitalize mb-2">
+                    {component.component_type.replace(/_/g, ' ')}
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    Status: <span className="capitalize">{component.status}</span>
+                  </div>
+                  {component.status === 'completed' && (
+                    <div className="mt-4 prose prose-sm max-w-none">
+                      {renderComponent(component)}
+                    </div>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{review.description}</p>
-                {review.result ? (
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <p className="text-sm whitespace-pre-wrap">{review.result}</p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-amber-600">
-                    {review.status === 'pending' ? 'Processing...' : 'No result available'}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </TabsContent>
+          </Tabs>
         )}
       </ScrollArea>
     </Card>

@@ -28,7 +28,7 @@ const Dashboard = () => {
         <div className="flex justify-end mb-4">
           <SettingsSidebar />
         </div>
-        <div className="grid gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-[calc(100vh-16rem)]">
           <ResearchForm />
           <ResearchResults />
         </div>

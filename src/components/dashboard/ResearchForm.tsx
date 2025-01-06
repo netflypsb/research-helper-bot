@@ -34,6 +34,7 @@ export const ResearchForm = () => {
         body: {
           description,
           userId: session.user.id,
+          requestId: requestData.id,
         },
       });
 
@@ -41,14 +42,11 @@ export const ResearchForm = () => {
 
       toast({
         title: "Success",
-        description: "Literature review generated successfully",
+        description: "Research proposal generation started",
       });
 
       // Clear the description field
       setDescription("");
-
-      // Force a reload of the page to show the new review
-      window.location.reload();
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -61,11 +59,11 @@ export const ResearchForm = () => {
   };
 
   return (
-    <Card className="p-6">
+    <Card className="p-6 h-full">
       <h2 className="text-xl font-semibold text-sky-900 mb-6">Research Description</h2>
       <div className="space-y-4">
         <Textarea
-          placeholder="Enter your research description here..."
+          placeholder="Describe your research proposal here..."
           className="min-h-[200px]"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -75,7 +73,7 @@ export const ResearchForm = () => {
           onClick={handleGenerateReview}
           disabled={isLoading}
         >
-          {isLoading ? "Generating..." : "Generate Literature Review"}
+          {isLoading ? "Generating..." : "Generate Research Proposal"}
         </Button>
       </div>
     </Card>
