@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ export const ApiKeysForm = () => {
       .from("api_keys")
       .select("*")
       .eq("user_id", session.user.id)
-      .maybeSingle(); // Changed from .single() to .maybeSingle()
+      .maybeSingle();
 
     if (error) {
       console.error("Error loading API keys:", error);
@@ -75,7 +75,7 @@ export const ApiKeysForm = () => {
   };
 
   // Load API keys when component mounts
-  useState(() => {
+  useEffect(() => {
     loadApiKeys();
   }, []);
 
