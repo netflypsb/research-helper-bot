@@ -1,92 +1,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders, handleError } from './utils.ts';
-import { generateWithOpenRouter } from './openrouter.ts';
+import { generateSearchTerms } from './searchTerms.ts';
 import { performSearch } from './serper.ts';
+import { synthesizeLiteratureReview } from './literatureReview.ts';
+import { generateTitleAndObjectives } from './titleAndObjectives.ts';
 import type { ResearchRequest, ApiKeys } from './types.ts';
-
-async function generateSearchTerms(description: string, openrouterKey: string): Promise<string> {
-  console.log('Generating search terms for description:', description);
-  
-  if (!openrouterKey) {
-    throw new Error('OpenRouter API key is required for search terms generation');
-  }
-
-  const systemPrompt = 'You are a research strategist. Generate relevant search terms for academic research.';
-  const prompt = `Generate 3-5 specific search terms for the following research topic: ${description}`;
-  
-  try {
-    const terms = await generateWithOpenRouter(prompt, systemPrompt, openrouterKey);
-    console.log('Generated search terms:', terms);
-    return terms;
-  } catch (error) {
-    console.error('Error generating search terms:', error);
-    throw new Error(`Failed to generate search terms: ${error.message}`);
-  }
-}
-
-async function synthesizeLiteratureReview(
-  searchResults: any[],
-  description: string,
-  openrouterKey: string
-): Promise<string> {
-  const context = searchResults.map(result => result.snippet).join('\n');
-  const systemPrompt = `You are a research synthesizer tasked with creating comprehensive literature reviews. 
-Follow this structure strictly:
-
-1. Title: "Literature Review: [Research Topic]"
-
-2. Overview of Relevant Studies (400-500 words):
-- Synthesize and present key findings from recent research
-- Highlight methodologies used
-- Present major theoretical frameworks
-
-3. Identification of Research Gaps (300-400 words):
-- Analyze limitations in current research
-- Identify unexplored areas
-- Point out methodological gaps
-
-4. Building on Existing Work (300-400 words):
-- Explain how the proposed study addresses identified gaps
-- Discuss potential contributions to the field
-- Connect with existing theoretical frameworks`;
-
-  return await generateWithOpenRouter(
-    `Create a structured literature review for the topic: ${description}\n\nBased on these findings:\n${context}`,
-    systemPrompt,
-    openrouterKey
-  );
-}
-
-async function generateTitleAndObjectives(
-  description: string,
-  literatureReview: string,
-  openrouterKey: string
-): Promise<string> {
-  const systemPrompt = `You are a medical research proposal expert. Based on the provided research description and literature review, generate:
-
-1. Title (10-20 words):
-- Concise and descriptive
-- Clearly summarizes the research topic and focus
-- Reflects the identified research gaps
-
-2. Objectives (100-200 words total):
-a) General Objective:
-- State the broad goal of the research
-- Align with identified research gaps
-- Clear and achievable
-
-b) Specific Objectives:
-- List 3-4 measurable and precise goals
-- Directly related to research questions
-- Logically support the general objective`;
-
-  return await generateWithOpenRouter(
-    `Generate a title and objectives based on this research description:\n${description}\n\nAnd this literature review:\n${literatureReview}`,
-    systemPrompt,
-    openrouterKey
-  );
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {

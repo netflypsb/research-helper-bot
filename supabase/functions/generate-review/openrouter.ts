@@ -9,7 +9,7 @@ export async function generateWithOpenRouter(
     throw new Error('OpenRouter API key is required');
   }
 
-  console.log('Generating with OpenRouter:', { prompt, systemPrompt });
+  console.log('Generating with OpenRouter:', { prompt });
   
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -20,7 +20,7 @@ export async function generateWithOpenRouter(
         'HTTP-Referer': 'https://lovable.dev',
       },
       body: JSON.stringify({
-        model: 'deepseek-ai/deepseek-coder-33b-instruct',
+        model: 'anthropic/claude-2', // Updated to a valid model
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
