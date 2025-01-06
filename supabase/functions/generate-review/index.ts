@@ -1,58 +1,23 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { corsHeaders, handleError } from './utils.ts';
+import { generateWithOpenRouter } from './openrouter.ts';
+import { performSearch } from './serper.ts';
+import type { ResearchRequest, ApiKeys } from './types.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-async function generateSearchTerms(description: string, openrouterKey: string) {
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openrouterKey}`,
-      'HTTP-Referer': 'https://lovable.dev',
-    },
-    body: JSON.stringify({
-      model: 'deepseek-ai/deepseek-coder-33b-instruct',
-      messages: [{
-        role: 'system',
-        content: 'You are a research strategist. Generate relevant search terms for academic research.'
-      }, {
-        role: 'user',
-        content: `Generate 3-5 specific search terms for the following research topic: ${description}`
-      }]
-    })
-  });
-
-  const data = await response.json();
-  if (!data.choices?.[0]?.message?.content) {
-    throw new Error('Invalid response from OpenRouter API for search terms generation');
-  }
-  return data.choices[0].message.content;
-}
-
-async function performSearch(searchTerms: string, serperKey: string) {
-  const response = await fetch('https://google.serper.dev/search', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-KEY': serperKey,
-    },
-    body: JSON.stringify({
-      q: searchTerms,
-      num: 8
-    })
-  });
-
-  const data = await response.json();
-  return data.organic || [];
-}
-
-async function synthesizeLiteratureReview(searchResults: any[], description: string, openrouterKey: string) {
-  const context = searchResults.map(result => result.snippet).join('\n');
+async function generateSearchTerms(description: string, openrouterKey: string): Promise<string> {
+  const systemPrompt = 'You are a research strategist. Generate relevant search terms for academic research.';
+  const prompt = `Generate 3-5 specific search terms for the following research topic: ${description}`;
   
+  return await generateWithOpenRouter(prompt, systemPrompt, openrouterKey);
+}
+
+async function synthesizeLiteratureReview(
+  searchResults: any[],
+  description: string,
+  openrouterKey: string
+): Promise<string> {
+  const context = searchResults.map(result => result.snippet).join('\n');
   const systemPrompt = `You are a research synthesizer tasked with creating comprehensive literature reviews. 
 Follow this structure strictly:
 
@@ -76,33 +41,18 @@ Follow this structure strictly:
 Total word count should be between 1,000-1,500 words.
 Use academic language and proper citations where relevant.`;
 
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openrouterKey}`,
-      'HTTP-Referer': 'https://lovable.dev',
-    },
-    body: JSON.stringify({
-      model: 'deepseek-ai/deepseek-coder-33b-instruct',
-      messages: [{
-        role: 'system',
-        content: systemPrompt
-      }, {
-        role: 'user',
-        content: `Create a structured literature review for the topic: ${description}\n\nBased on these findings:\n${context}`
-      }]
-    })
-  });
-
-  const data = await response.json();
-  if (!data.choices?.[0]?.message?.content) {
-    throw new Error('Invalid response from OpenRouter API for literature review generation');
-  }
-  return data.choices[0].message.content;
+  return await generateWithOpenRouter(
+    `Create a structured literature review for the topic: ${description}\n\nBased on these findings:\n${context}`,
+    systemPrompt,
+    openrouterKey
+  );
 }
 
-async function generateTitleAndObjectives(description: string, literatureReview: string, openrouterKey: string) {
+async function generateTitleAndObjectives(
+  description: string,
+  literatureReview: string,
+  openrouterKey: string
+): Promise<string> {
   const systemPrompt = `You are a medical research proposal expert. Based on the provided research description and literature review, generate:
 
 1. Title (10-20 words):
@@ -123,30 +73,11 @@ b) Specific Objectives:
 
 Format the response with clear headings for Title and Objectives sections.`;
 
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openrouterKey}`,
-      'HTTP-Referer': 'https://lovable.dev',
-    },
-    body: JSON.stringify({
-      model: 'deepseek-ai/deepseek-coder-33b-instruct',
-      messages: [{
-        role: 'system',
-        content: systemPrompt
-      }, {
-        role: 'user',
-        content: `Generate a title and objectives based on this research description:\n${description}\n\nAnd this literature review:\n${literatureReview}`
-      }]
-    })
-  });
-
-  const data = await response.json();
-  if (!data.choices?.[0]?.message?.content) {
-    throw new Error('Invalid response from OpenRouter API for title and objectives generation');
-  }
-  return data.choices[0].message.content;
+  return await generateWithOpenRouter(
+    `Generate a title and objectives based on this research description:\n${description}\n\nAnd this literature review:\n${literatureReview}`,
+    systemPrompt,
+    openrouterKey
+  );
 }
 
 serve(async (req) => {
@@ -163,7 +94,7 @@ serve(async (req) => {
     const { description, userId } = await req.json();
     console.log('Received request:', { description, userId });
 
-    // Fetch API keys for the user
+    // Fetch API keys
     const { data: apiKeys, error: apiKeysError } = await supabaseClient
       .from('api_keys')
       .select('*')
@@ -178,7 +109,7 @@ serve(async (req) => {
       );
     }
 
-    // Create initial research request
+    // Create research request
     const { data: requestData, error: requestError } = await supabaseClient
       .from('research_requests')
       .insert({
@@ -195,17 +126,22 @@ serve(async (req) => {
 
     console.log('Starting research process...');
 
-    // Step 1: Generate search terms and perform literature review
+    // Generate search terms and perform search
     const searchTerms = await generateSearchTerms(description, apiKeys.openrouter_key);
     console.log('Generated search terms:', searchTerms);
 
     const searchResults = await performSearch(searchTerms, apiKeys.serper_key);
     console.log('Search results retrieved:', searchResults.length);
 
-    const literatureReview = await synthesizeLiteratureReview(searchResults, description, apiKeys.openrouter_key);
-    console.log('Literature review generated successfully');
+    // Generate literature review
+    const literatureReview = await synthesizeLiteratureReview(
+      searchResults,
+      description,
+      apiKeys.openrouter_key
+    );
+    console.log('Literature review generated');
 
-    // Create literature review component
+    // Store literature review
     const { error: litReviewError } = await supabaseClient
       .from('research_proposal_components')
       .insert({
@@ -215,15 +151,17 @@ serve(async (req) => {
         status: 'completed'
       });
 
-    if (litReviewError) {
-      throw litReviewError;
-    }
+    if (litReviewError) throw litReviewError;
 
-    // Step 2: Generate title and objectives based on literature review
-    const titleAndObjectives = await generateTitleAndObjectives(description, literatureReview, apiKeys.openrouter_key);
-    console.log('Title and objectives generated successfully');
+    // Generate title and objectives
+    const titleAndObjectives = await generateTitleAndObjectives(
+      description,
+      literatureReview,
+      apiKeys.openrouter_key
+    );
+    console.log('Title and objectives generated');
 
-    // Create title and objectives component
+    // Store title and objectives
     const { error: objectivesError } = await supabaseClient
       .from('research_proposal_components')
       .insert({
@@ -233,9 +171,7 @@ serve(async (req) => {
         status: 'completed'
       });
 
-    if (objectivesError) {
-      throw objectivesError;
-    }
+    if (objectivesError) throw objectivesError;
 
     // Update research request status
     const { error: updateError } = await supabaseClient
@@ -246,9 +182,7 @@ serve(async (req) => {
       })
       .eq('id', requestData.id);
 
-    if (updateError) {
-      throw updateError;
-    }
+    if (updateError) throw updateError;
 
     return new Response(
       JSON.stringify({ 
@@ -258,10 +192,6 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Function error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    );
+    return handleError(error);
   }
 });
