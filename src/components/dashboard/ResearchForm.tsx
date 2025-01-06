@@ -46,6 +46,9 @@ export const ResearchForm = () => {
 
       // Clear the description field
       setDescription("");
+
+      // Force a reload of the page to show the new review
+      window.location.reload();
     } catch (error: any) {
       toast({
         variant: "destructive",

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import { ApiKeysForm } from "@/components/dashboard/ApiKeysForm";
 import { ResearchForm } from "@/components/dashboard/ResearchForm";
+import { ResearchResults } from "@/components/dashboard/ResearchResults";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -23,9 +24,12 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white">
       <Header />
       <div className="container mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-2 gap-8">
-          <ApiKeysForm />
-          <ResearchForm />
+        <div className="grid gap-8">
+          <div className="grid md:grid-cols-2 gap-8">
+            <ApiKeysForm />
+            <ResearchForm />
+          </div>
+          <ResearchResults />
         </div>
       </div>
     </div>
