@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Download } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 export const ResearchResults = () => {
+  const { toast } = useToast();
   const [reviews, setReviews] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -48,6 +50,41 @@ export const ResearchResults = () => {
 
     setReviews(reviewsWithComponents);
     setIsLoading(false);
+  };
+
+  const handleDelete = async (reviewId: string) => {
+    try {
+      // First delete all related components
+      const { error: componentsError } = await supabase
+        .from("research_proposal_components")
+        .delete()
+        .eq("research_request_id", reviewId);
+
+      if (componentsError) throw componentsError;
+
+      // Then delete the research request
+      const { error: requestError } = await supabase
+        .from("research_requests")
+        .delete()
+        .eq("id", reviewId);
+
+      if (requestError) throw requestError;
+
+      // Update the UI
+      setReviews(reviews.filter(review => review.id !== reviewId));
+
+      toast({
+        title: "Success",
+        description: "Research proposal deleted successfully",
+      });
+    } catch (error: any) {
+      console.error("Error deleting research proposal:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete research proposal",
+      });
+    }
   };
 
   const handleDownload = (content: string, filename: string) => {
@@ -93,6 +130,15 @@ export const ResearchResults = () => {
                         Download All
                       </Button>
                     )}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="flex items-center gap-2"
+                      onClick={() => handleDelete(review.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-4">{review.description}</p>
