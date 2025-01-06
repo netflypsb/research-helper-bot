@@ -12,9 +12,10 @@ async function generateSearchTerms(description: string, openrouterKey: string) {
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${openrouterKey}`,
+      'HTTP-Referer': 'https://lovable.dev',
     },
     body: JSON.stringify({
-      model: 'mistralai/mistral-7b-instruct',
+      model: 'deepseek-ai/deepseek-coder-33b-instruct',
       messages: [{
         role: 'system',
         content: 'You are a research strategist. Generate relevant search terms for academic research.'
@@ -26,10 +27,13 @@ async function generateSearchTerms(description: string, openrouterKey: string) {
   });
 
   const data = await response.json();
+  if (!data.choices?.[0]?.message?.content) {
+    throw new Error('Invalid response from OpenRouter API for search terms generation');
+  }
   return data.choices[0].message.content;
 }
 
-async function performSearch(searchTerms: string, serpKey: string, serperKey: string) {
+async function performSearch(searchTerms: string, serperKey: string) {
   const response = await fetch('https://google.serper.dev/search', {
     method: 'POST',
     headers: {
@@ -38,15 +42,15 @@ async function performSearch(searchTerms: string, serpKey: string, serperKey: st
     },
     body: JSON.stringify({
       q: searchTerms,
-      num: 8 // Increased number of results for better coverage
+      num: 8
     })
   });
 
   const data = await response.json();
-  return data.organic;
+  return data.organic || [];
 }
 
-async function synthesizeResults(searchResults: any[], description: string, openrouterKey: string) {
+async function synthesizeLiteratureReview(searchResults: any[], description: string, openrouterKey: string) {
   const context = searchResults.map(result => result.snippet).join('\n');
   
   const systemPrompt = `You are a research synthesizer tasked with creating comprehensive literature reviews. 
@@ -77,9 +81,10 @@ Use academic language and proper citations where relevant.`;
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${openrouterKey}`,
+      'HTTP-Referer': 'https://lovable.dev',
     },
     body: JSON.stringify({
-      model: 'mistralai/mistral-7b-instruct',
+      model: 'deepseek-ai/deepseek-coder-33b-instruct',
       messages: [{
         role: 'system',
         content: systemPrompt
@@ -91,6 +96,56 @@ Use academic language and proper citations where relevant.`;
   });
 
   const data = await response.json();
+  if (!data.choices?.[0]?.message?.content) {
+    throw new Error('Invalid response from OpenRouter API for literature review generation');
+  }
+  return data.choices[0].message.content;
+}
+
+async function generateTitleAndObjectives(description: string, literatureReview: string, openrouterKey: string) {
+  const systemPrompt = `You are a medical research proposal expert. Based on the provided research description and literature review, generate:
+
+1. Title (10-20 words):
+- Concise and descriptive
+- Clearly summarizes the research topic and focus
+- Reflects the identified research gaps
+
+2. Objectives (100-200 words total):
+a) General Objective:
+- State the broad goal of the research
+- Align with identified research gaps
+- Clear and achievable
+
+b) Specific Objectives:
+- List 3-4 measurable and precise goals
+- Directly related to research questions
+- Logically support the general objective
+
+Format the response with clear headings for Title and Objectives sections.`;
+
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${openrouterKey}`,
+      'HTTP-Referer': 'https://lovable.dev',
+    },
+    body: JSON.stringify({
+      model: 'deepseek-ai/deepseek-coder-33b-instruct',
+      messages: [{
+        role: 'system',
+        content: systemPrompt
+      }, {
+        role: 'user',
+        content: `Generate a title and objectives based on this research description:\n${description}\n\nAnd this literature review:\n${literatureReview}`
+      }]
+    })
+  });
+
+  const data = await response.json();
+  if (!data.choices?.[0]?.message?.content) {
+    throw new Error('Invalid response from OpenRouter API for title and objectives generation');
+  }
   return data.choices[0].message.content;
 }
 
@@ -123,38 +178,83 @@ serve(async (req) => {
       );
     }
 
+    // Create initial research request
+    const { data: requestData, error: requestError } = await supabaseClient
+      .from('research_requests')
+      .insert({
+        user_id: userId,
+        description,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (requestError) {
+      throw requestError;
+    }
+
     console.log('Starting research process...');
 
-    // Step 1: Generate search terms
+    // Step 1: Generate search terms and perform literature review
     const searchTerms = await generateSearchTerms(description, apiKeys.openrouter_key);
     console.log('Generated search terms:', searchTerms);
 
-    // Step 2: Perform search
-    const searchResults = await performSearch(searchTerms, apiKeys.serp_key, apiKeys.serper_key);
+    const searchResults = await performSearch(searchTerms, apiKeys.serper_key);
     console.log('Search results retrieved:', searchResults.length);
 
-    // Step 3: Synthesize results
-    const review = await synthesizeResults(searchResults, description, apiKeys.openrouter_key);
-    console.log('Review generated successfully');
+    const literatureReview = await synthesizeLiteratureReview(searchResults, description, apiKeys.openrouter_key);
+    console.log('Literature review generated successfully');
 
-    // Update research request with result
+    // Create literature review component
+    const { error: litReviewError } = await supabaseClient
+      .from('research_proposal_components')
+      .insert({
+        research_request_id: requestData.id,
+        component_type: 'literature_review',
+        content: literatureReview,
+        status: 'completed'
+      });
+
+    if (litReviewError) {
+      throw litReviewError;
+    }
+
+    // Step 2: Generate title and objectives based on literature review
+    const titleAndObjectives = await generateTitleAndObjectives(description, literatureReview, apiKeys.openrouter_key);
+    console.log('Title and objectives generated successfully');
+
+    // Create title and objectives component
+    const { error: objectivesError } = await supabaseClient
+      .from('research_proposal_components')
+      .insert({
+        research_request_id: requestData.id,
+        component_type: 'title_and_objectives',
+        content: titleAndObjectives,
+        status: 'completed'
+      });
+
+    if (objectivesError) {
+      throw objectivesError;
+    }
+
+    // Update research request status
     const { error: updateError } = await supabaseClient
       .from('research_requests')
       .update({ 
         status: 'completed',
-        result: review,
         updated_at: new Date().toISOString()
       })
-      .eq('user_id', userId)
-      .eq('description', description);
+      .eq('id', requestData.id);
 
     if (updateError) {
-      console.error('Update error:', updateError);
       throw updateError;
     }
 
     return new Response(
-      JSON.stringify({ result: review }),
+      JSON.stringify({ 
+        message: 'Research proposal components generated successfully',
+        requestId: requestData.id
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

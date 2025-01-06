@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const ResearchResults = () => {
   const [reviews, setReviews] = useState<any[]>([]);
@@ -17,28 +18,44 @@ export const ResearchResults = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    const { data, error } = await supabase
+    const { data: requests, error: requestsError } = await supabase
       .from("research_requests")
       .select("*")
       .eq("user_id", session.user.id)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error("Error loading reviews:", error);
+    if (requestsError) {
+      console.error("Error loading requests:", requestsError);
       return;
     }
 
-    setReviews(data || []);
+    const reviewsWithComponents = await Promise.all(
+      (requests || []).map(async (request) => {
+        const { data: components, error: componentsError } = await supabase
+          .from("research_proposal_components")
+          .select("*")
+          .eq("research_request_id", request.id)
+          .order('created_at', { ascending: true });
+
+        if (componentsError) {
+          console.error("Error loading components:", componentsError);
+          return { ...request, components: [] };
+        }
+
+        return { ...request, components: components || [] };
+      })
+    );
+
+    setReviews(reviewsWithComponents);
     setIsLoading(false);
   };
 
-  const handleDownload = (review: string) => {
-    // Create a blob with the review content
-    const blob = new Blob([review], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  const handleDownload = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'literature-review.docx';
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
@@ -51,38 +68,89 @@ export const ResearchResults = () => {
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-semibold text-sky-900 mb-6">Generated Literature Reviews</h2>
-      <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+      <h2 className="text-xl font-semibold text-sky-900 mb-6">Research Proposal Components</h2>
+      <ScrollArea className="h-[600px] w-full rounded-md border p-4">
         {reviews.length === 0 ? (
-          <p className="text-gray-500">No reviews generated yet.</p>
+          <p className="text-gray-500">No research proposals generated yet.</p>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {reviews.map((review, index) => (
-              <div key={review.id} className="border-b pb-4 last:border-b-0">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium text-sky-800">Research #{reviews.length - index}</h3>
-                  {review.result && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2"
-                      onClick={() => handleDownload(review.result)}
-                    >
-                      <Download className="h-4 w-4" />
-                      Download
-                    </Button>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600 mb-2">{review.description}</p>
-                {review.result ? (
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <p className="text-sm whitespace-pre-wrap">{review.result}</p>
+              <div key={review.id} className="border-b pb-6 last:border-b-0">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="font-medium text-sky-800">Research Proposal #{reviews.length - index}</h3>
+                  <div className="space-x-2">
+                    {review.components?.some(c => c.content) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={() => handleDownload(
+                          review.components.map(c => c.content).join('\n\n'),
+                          'research-proposal.docx'
+                        )}
+                      >
+                        <Download className="h-4 w-4" />
+                        Download All
+                      </Button>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-sm text-amber-600">
-                    {review.status === 'pending' ? 'Processing...' : 'No result available'}
-                  </p>
-                )}
+                </div>
+                <p className="text-sm text-gray-600 mb-4">{review.description}</p>
+                
+                <Tabs defaultValue="all" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="all">All Components</TabsTrigger>
+                    <TabsTrigger value="title">Title & Objectives</TabsTrigger>
+                    <TabsTrigger value="literature">Literature Review</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="all">
+                    <div className="space-y-6">
+                      {review.components?.map((component) => (
+                        <div key={component.id} className="bg-gray-50 p-4 rounded-md">
+                          <h4 className="font-medium text-sky-700 mb-2">
+                            {component.component_type === 'literature_review' 
+                              ? 'Literature Review' 
+                              : 'Title & Objectives'}
+                          </h4>
+                          {component.content ? (
+                            <div className="prose max-w-none">
+                              <p className="text-sm whitespace-pre-wrap">{component.content}</p>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-amber-600">
+                              {component.status === 'pending' ? 'Processing...' : 'No content available'}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="title">
+                    {review.components?.find(c => c.component_type === 'title_and_objectives')?.content ? (
+                      <div className="bg-gray-50 p-4 rounded-md">
+                        <p className="text-sm whitespace-pre-wrap">
+                          {review.components.find(c => c.component_type === 'title_and_objectives')?.content}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-amber-600">No title and objectives available</p>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="literature">
+                    {review.components?.find(c => c.component_type === 'literature_review')?.content ? (
+                      <div className="bg-gray-50 p-4 rounded-md">
+                        <p className="text-sm whitespace-pre-wrap">
+                          {review.components.find(c => c.component_type === 'literature_review')?.content}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-amber-600">No literature review available</p>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </div>
             ))}
           </div>
