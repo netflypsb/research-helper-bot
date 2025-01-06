@@ -1,11 +1,76 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { Agent, Crew, Task } from 'https://esm.sh/crewai-sdk@0.1.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+async function generateSearchTerms(description: string, openrouterKey: string) {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${openrouterKey}`,
+    },
+    body: JSON.stringify({
+      model: 'mistralai/mistral-7b-instruct',
+      messages: [{
+        role: 'system',
+        content: 'You are a research strategist. Generate relevant search terms for academic research.'
+      }, {
+        role: 'user',
+        content: `Generate 3-5 specific search terms for the following research topic: ${description}`
+      }]
+    })
+  });
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+async function performSearch(searchTerms: string, serpKey: string, serperKey: string) {
+  // Use Serper for academic search
+  const response = await fetch('https://google.serper.dev/search', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-KEY': serperKey,
+    },
+    body: JSON.stringify({
+      q: searchTerms,
+      num: 5
+    })
+  });
+
+  const data = await response.json();
+  return data.organic;
+}
+
+async function synthesizeResults(searchResults: any[], description: string, openrouterKey: string) {
+  const context = searchResults.map(result => result.snippet).join('\n');
+  
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${openrouterKey}`,
+    },
+    body: JSON.stringify({
+      model: 'mistralai/mistral-7b-instruct',
+      messages: [{
+        role: 'system',
+        content: 'You are a research synthesizer. Create a comprehensive literature review based on the provided search results.'
+      }, {
+        role: 'user',
+        content: `Create a literature review for the topic: ${description}\n\nBased on these findings:\n${context}`
+      }]
+    })
+  });
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -19,6 +84,7 @@ serve(async (req) => {
     );
 
     const { description, userId } = await req.json();
+    console.log('Received request:', { description, userId });
 
     // Fetch API keys for the user
     const { data: apiKeys, error: apiKeysError } = await supabaseClient
@@ -28,87 +94,49 @@ serve(async (req) => {
       .single();
 
     if (apiKeysError || !apiKeys) {
+      console.error('API keys error:', apiKeysError);
       return new Response(
         JSON.stringify({ error: 'API keys not found' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    // Initialize CrewAI agents
-    const strategist = new Agent({
-      role: 'Research Strategist',
-      goal: 'Develop search strategies based on user input',
-      backstory: 'Expert in formulating effective research queries',
-      llmConfig: {
-        apiKey: apiKeys.openrouter_key,
-        baseURL: 'https://openrouter.ai/api/v1',
-      },
-    });
+    console.log('Starting research process...');
 
-    const searcher = new Agent({
-      role: 'Literature Searcher',
-      goal: 'Retrieve relevant research papers',
-      backstory: 'Skilled in navigating academic databases',
-      tools: {
-        serpApi: { apiKey: apiKeys.serp_key },
-        serperDev: { apiKey: apiKeys.serper_key },
-      },
-    });
+    // Step 1: Generate search terms
+    const searchTerms = await generateSearchTerms(description, apiKeys.openrouter_key);
+    console.log('Generated search terms:', searchTerms);
 
-    const synthesizer = new Agent({
-      role: 'Review Synthesizer',
-      goal: 'Summarize and synthesize research findings',
-      backstory: 'Adept at creating coherent literature reviews',
-      llmConfig: {
-        apiKey: apiKeys.openrouter_key,
-        baseURL: 'https://openrouter.ai/api/v1',
-      },
-    });
+    // Step 2: Perform search
+    const searchResults = await performSearch(searchTerms, apiKeys.serp_key, apiKeys.serper_key);
+    console.log('Search results retrieved:', searchResults.length);
 
-    // Create tasks
-    const tasks = [
-      new Task({
-        description: 'Generate optimized search terms based on the research description',
-        agent: strategist,
-      }),
-      new Task({
-        description: 'Perform literature search using the generated terms',
-        agent: searcher,
-      }),
-      new Task({
-        description: 'Synthesize findings into a comprehensive review',
-        agent: synthesizer,
-      }),
-    ];
-
-    // Create and execute crew
-    const crew = new Crew({
-      agents: [strategist, searcher, synthesizer],
-      tasks: tasks,
-    });
-
-    const result = await crew.execute();
+    // Step 3: Synthesize results
+    const review = await synthesizeResults(searchResults, description, apiKeys.openrouter_key);
+    console.log('Review generated successfully');
 
     // Update research request with result
     const { error: updateError } = await supabaseClient
       .from('research_requests')
       .update({ 
         status: 'completed',
-        result: result,
+        result: review,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', userId)
       .eq('description', description);
 
     if (updateError) {
+      console.error('Update error:', updateError);
       throw updateError;
     }
 
     return new Response(
-      JSON.stringify({ result }),
+      JSON.stringify({ result: review }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    console.error('Function error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
