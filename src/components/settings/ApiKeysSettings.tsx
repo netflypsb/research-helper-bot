@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ApiKeyInput } from "./ApiKeyInput";
@@ -79,16 +78,19 @@ export const ApiKeysSettings = () => {
         label="OpenRouter API Key"
         value={apiKeys.openrouter_key}
         onChange={(value) => setApiKeys({ ...apiKeys, openrouter_key: value })}
+        link="https://openrouter.ai/"
       />
       <ApiKeyInput
         label="SERP API Key"
         value={apiKeys.serp_key}
         onChange={(value) => setApiKeys({ ...apiKeys, serp_key: value })}
+        link="https://serpapi.com/"
       />
       <ApiKeyInput
         label="Serper API Key"
         value={apiKeys.serper_key}
         onChange={(value) => setApiKeys({ ...apiKeys, serper_key: value })}
+        link="https://serper.dev/"
       />
       <Button 
         className="w-full bg-primary hover:bg-sky-700"
