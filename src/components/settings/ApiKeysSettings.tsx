@@ -1,71 +1,9 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { ApiKeyInput } from "./ApiKeyInput";
+import { useEffect } from "react";
+import { useApiKeys } from "@/hooks/use-api-keys";
+import { ApiKeysForm } from "./ApiKeysForm";
 
 export const ApiKeysSettings = () => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [apiKeys, setApiKeys] = useState({
-    openrouter_key: "",
-    serp_key: "",
-    serper_key: "",
-  });
-
-  const loadApiKeys = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const { data, error } = await supabase
-      .from("api_keys")
-      .select("*")
-      .eq("user_id", session.user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Error loading API keys:", error);
-      return;
-    }
-
-    if (data) {
-      setApiKeys({
-        openrouter_key: data.openrouter_key || "",
-        serp_key: data.serp_key || "",
-        serper_key: data.serper_key || "",
-      });
-    }
-  };
-
-  const handleSaveApiKeys = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from("api_keys")
-        .upsert({
-          user_id: session.user.id,
-          ...apiKeys,
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "API keys saved successfully",
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { apiKeys, setApiKeys, loadApiKeys, saveApiKeys, isLoading } = useApiKeys();
 
   useEffect(() => {
     loadApiKeys();
@@ -74,31 +12,12 @@ export const ApiKeysSettings = () => {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">API Keys</h3>
-      <ApiKeyInput
-        label="OpenRouter API Key"
-        value={apiKeys.openrouter_key}
-        onChange={(value) => setApiKeys({ ...apiKeys, openrouter_key: value })}
-        link="https://openrouter.ai/"
+      <ApiKeysForm
+        apiKeys={apiKeys}
+        onChange={setApiKeys}
+        onSave={saveApiKeys}
+        isLoading={isLoading}
       />
-      <ApiKeyInput
-        label="SERP API Key"
-        value={apiKeys.serp_key}
-        onChange={(value) => setApiKeys({ ...apiKeys, serp_key: value })}
-        link="https://serpapi.com/"
-      />
-      <ApiKeyInput
-        label="Serper API Key"
-        value={apiKeys.serper_key}
-        onChange={(value) => setApiKeys({ ...apiKeys, serper_key: value })}
-        link="https://serper.dev/"
-      />
-      <Button 
-        className="w-full bg-primary hover:bg-sky-700"
-        onClick={handleSaveApiKeys}
-        disabled={isLoading}
-      >
-        {isLoading ? "Saving..." : "Save API Keys"}
-      </Button>
     </div>
   );
 };
