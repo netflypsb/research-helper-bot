@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 to-white">
       <Header />
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-16 flex-grow">
         <div className="max-w-3xl mx-auto text-center mb-16">
           <h2 className="text-4xl font-bold text-sky-900 mb-6">
             Accelerate Your Medical Research with AI
@@ -38,6 +39,7 @@ const Index = () => {
           </Card>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

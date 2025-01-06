@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -41,9 +42,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 to-white">
       <Header />
-      <div className="flex items-center justify-center p-4">
+      <div className="flex-grow flex items-center justify-center p-4">
         <Card className="w-full max-w-md p-8">
           <h2 className="text-2xl font-bold text-sky-900 mb-6 text-center">Welcome Back</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -87,6 +88,7 @@ const Login = () => {
           </p>
         </Card>
       </div>
+      <Footer />
     </div>
   );
 };

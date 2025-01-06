@@ -2,9 +2,10 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
-import { ApiKeysForm } from "@/components/dashboard/ApiKeysForm";
+import Footer from "@/components/Footer";
 import { ResearchForm } from "@/components/dashboard/ResearchForm";
 import { ResearchResults } from "@/components/dashboard/ResearchResults";
+import { SettingsSidebar } from "@/components/settings/SettingsSidebar";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -21,17 +22,18 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 to-white">
       <Header />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 flex-grow">
+        <div className="flex justify-end mb-4">
+          <SettingsSidebar />
+        </div>
         <div className="grid gap-8">
-          <div className="grid md:grid-cols-2 gap-8">
-            <ApiKeysForm />
-            <ResearchForm />
-          </div>
+          <ResearchForm />
           <ResearchResults />
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
