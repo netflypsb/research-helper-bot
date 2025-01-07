@@ -6,7 +6,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Settings, ChevronDown, Trash2 } from "lucide-react";
+import { Settings, ChevronDown, Trash2, PlusCircle } from "lucide-react";
 import { ApiKeysSettings } from "./ApiKeysSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -108,6 +108,12 @@ export const SettingsSidebar = () => {
     }
   };
 
+  const handleNewChat = () => {
+    // Dispatch event to clear the output
+    window.dispatchEvent(new CustomEvent('clearProposal'));
+    setIsSheetOpen(false);
+  };
+
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <SheetTrigger asChild>
@@ -120,6 +126,16 @@ export const SettingsSidebar = () => {
           <SheetTitle>Settings</SheetTitle>
         </SheetHeader>
         <div className="space-y-6 py-6">
+          {/* New Chat Button */}
+          <Button
+            variant="outline"
+            className="w-full flex items-center gap-2"
+            onClick={handleNewChat}
+          >
+            <PlusCircle className="h-4 w-4" />
+            New Chat
+          </Button>
+
           {/* History Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">History</h3>

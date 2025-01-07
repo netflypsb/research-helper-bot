@@ -16,15 +16,21 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
   useEffect(() => {
     loadLatestProposal();
     
-    // Add event listener for loading specific proposals
+    // Add event listeners for loading and clearing proposals
     const handleLoadProposal = (event: any) => {
       setComponents(event.detail.components);
     };
     
+    const handleClearProposal = () => {
+      setComponents([]);
+    };
+    
     window.addEventListener('loadProposal', handleLoadProposal);
+    window.addEventListener('clearProposal', handleClearProposal);
     
     return () => {
       window.removeEventListener('loadProposal', handleLoadProposal);
+      window.removeEventListener('clearProposal', handleClearProposal);
     };
   }, []);
 
