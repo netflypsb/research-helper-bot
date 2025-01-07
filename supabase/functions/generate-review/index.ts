@@ -5,6 +5,7 @@ import { generateSearchTerms } from './searchTerms.ts';
 import { performSearch } from './serper.ts';
 import { synthesizeLiteratureReview } from './literatureReview.ts';
 import { generateTitleAndObjectives } from './titleAndObjectives.ts';
+import { generateAbstract } from './abstract.ts';
 import type { ResearchRequest, ApiKeys } from './types.ts';
 
 serve(async (req) => {
@@ -100,6 +101,26 @@ serve(async (req) => {
       });
 
     if (objectivesError) throw objectivesError;
+
+    // Generate abstract using title, objectives and literature review
+    const abstract = await generateAbstract(
+      titleAndObjectives,
+      literatureReview,
+      apiKeys.openrouter_key
+    );
+    console.log('Abstract generated');
+
+    // Store abstract
+    const { error: abstractError } = await supabaseClient
+      .from('research_proposal_components')
+      .insert({
+        research_request_id: requestData.id,
+        component_type: 'abstract',
+        content: abstract,
+        status: 'completed'
+      });
+
+    if (abstractError) throw abstractError;
 
     // Update research request status
     const { error: updateError } = await supabaseClient

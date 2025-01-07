@@ -148,6 +148,7 @@ export const ResearchResults = () => {
                     <TabsTrigger value="all">All Components</TabsTrigger>
                     <TabsTrigger value="title">Title & Objectives</TabsTrigger>
                     <TabsTrigger value="literature">Literature Review</TabsTrigger>
+                    <TabsTrigger value="abstract">Abstract</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="all">
@@ -157,7 +158,9 @@ export const ResearchResults = () => {
                           <h4 className="font-medium text-sky-700 mb-2">
                             {component.component_type === 'literature_review' 
                               ? 'Literature Review' 
-                              : 'Title & Objectives'}
+                              : component.component_type === 'title_and_objectives'
+                              ? 'Title & Objectives'
+                              : 'Abstract'}
                           </h4>
                           {component.content ? (
                             <div className="prose max-w-none">
@@ -194,6 +197,18 @@ export const ResearchResults = () => {
                       </div>
                     ) : (
                       <p className="text-sm text-amber-600">No literature review available</p>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="abstract">
+                    {review.components?.find(c => c.component_type === 'abstract')?.content ? (
+                      <div className="bg-gray-50 p-4 rounded-md">
+                        <p className="text-sm whitespace-pre-wrap">
+                          {review.components.find(c => c.component_type === 'abstract')?.content}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-amber-600">No abstract available</p>
                     )}
                   </TabsContent>
                 </Tabs>
