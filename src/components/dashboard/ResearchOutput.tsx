@@ -15,6 +15,17 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
 
   useEffect(() => {
     loadLatestProposal();
+    
+    // Add event listener for loading specific proposals
+    const handleLoadProposal = (event: any) => {
+      setComponents(event.detail.components);
+    };
+    
+    window.addEventListener('loadProposal', handleLoadProposal);
+    
+    return () => {
+      window.removeEventListener('loadProposal', handleLoadProposal);
+    };
   }, []);
 
   const loadLatestProposal = async () => {
