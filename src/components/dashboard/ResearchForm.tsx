@@ -41,7 +41,7 @@ export const ResearchForm = () => {
 
       toast({
         title: "Success",
-        description: "Literature review generated successfully",
+        description: "Research proposal generated successfully",
       });
 
       // Clear the description field
@@ -66,7 +66,7 @@ export const ResearchForm = () => {
       <div className="space-y-4">
         <Textarea
           placeholder="Enter your research description here..."
-          className="min-h-[200px]"
+          className="min-h-[400px] resize-none"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
@@ -75,7 +75,7 @@ export const ResearchForm = () => {
           onClick={handleGenerateReview}
           disabled={isLoading}
         >
-          {isLoading ? "Generating..." : "Generate Literature Review"}
+          {isLoading ? "Generating..." : "Generate Research Proposal"}
         </Button>
       </div>
     </Card>

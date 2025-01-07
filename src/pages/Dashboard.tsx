@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { ResearchForm } from "@/components/dashboard/ResearchForm";
-import { ResearchResults } from "@/components/dashboard/ResearchResults";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { SettingsSidebar } from "@/components/settings/SettingsSidebar";
 
 const Dashboard = () => {
@@ -28,10 +27,7 @@ const Dashboard = () => {
         <div className="flex justify-end mb-4">
           <SettingsSidebar />
         </div>
-        <div className="grid gap-8">
-          <ResearchForm />
-          <ResearchResults />
-        </div>
+        <DashboardLayout />
       </div>
       <Footer />
     </div>
