@@ -2,26 +2,64 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Header = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check initial auth state
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session);
-    });
+    checkUser();
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const checkUser = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    } catch (error: any) {
+      console.error("Error checking auth state:", error);
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "Please try logging in again",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate("/login");
+      toast({
+        title: "Signed out successfully",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error signing out",
+        description: error.message,
+      });
+    }
+  };
+
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <nav className="bg-white shadow-sm">
@@ -34,12 +72,21 @@ const Header = () => {
         </h1>
         <div className="space-x-4">
           {isAuthenticated ? (
-            <Button
-              onClick={() => navigate("/dashboard")}
-              className="bg-primary hover:bg-sky-700"
-            >
-              Dashboard
-            </Button>
+            <div className="space-x-4">
+              <Button
+                onClick={() => navigate("/dashboard")}
+                className="bg-primary hover:bg-sky-700"
+              >
+                Dashboard
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSignOut}
+                className="text-sky-700 hover:text-sky-900"
+              >
+                Sign Out
+              </Button>
+            </div>
           ) : (
             <>
               <Button
