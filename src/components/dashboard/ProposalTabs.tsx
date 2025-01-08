@@ -29,6 +29,10 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => {
     }
   };
 
+  const getComponentByType = (type: string) => {
+    return components?.find(c => c.component_type === type);
+  };
+
   return (
     <Tabs defaultValue="all" className="w-full">
       <TabsList className="mb-4">
@@ -56,10 +60,10 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => {
       </TabsContent>
 
       <TabsContent value="title">
-        {components?.find(c => c.component_type === 'title_and_objectives')?.content ? (
+        {getComponentByType('title_and_objectives')?.content ? (
           <div className="bg-gray-50 p-4 rounded-md">
             <p className="text-sm whitespace-pre-wrap">
-              {components.find(c => c.component_type === 'title_and_objectives')?.content}
+              {getComponentByType('title_and_objectives')?.content}
             </p>
           </div>
         ) : (
@@ -68,10 +72,10 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => {
       </TabsContent>
 
       <TabsContent value="literature">
-        {components?.find(c => c.component_type === 'literature_review')?.content ? (
+        {getComponentByType('literature_review')?.content ? (
           <div className="bg-gray-50 p-4 rounded-md">
             <p className="text-sm whitespace-pre-wrap">
-              {components.find(c => c.component_type === 'literature_review')?.content}
+              {getComponentByType('literature_review')?.content}
             </p>
           </div>
         ) : (
@@ -80,10 +84,10 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => {
       </TabsContent>
 
       <TabsContent value="abstract">
-        {components?.find(c => c.component_type === 'abstract')?.content ? (
+        {getComponentByType('abstract')?.content ? (
           <div className="bg-gray-50 p-4 rounded-md">
             <p className="text-sm whitespace-pre-wrap">
-              {components.find(c => c.component_type === 'abstract')?.content}
+              {getComponentByType('abstract')?.content}
             </p>
           </div>
         ) : (

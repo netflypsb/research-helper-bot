@@ -21,10 +21,11 @@ export const ReferenceOrganizer = ({ searchResults }: ReferenceOrganizerProps) =
   }, [searchResults]);
 
   const organizeReferences = () => {
-    // Extract references from both SERP and Serper results
+    // Extract references from search results
     const allReferences = searchResults.flatMap(result => {
-      const parsedResults = result.results as any[];
-      return parsedResults.map(item => ({
+      // Parse the JSONB results field which contains the actual search results
+      const parsedResults = result.results?.organic || [];
+      return parsedResults.map((item: any) => ({
         title: item.title || "",
         link: item.link || "",
       }));
