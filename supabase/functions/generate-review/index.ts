@@ -6,7 +6,6 @@ import { performSearch } from './serper.ts';
 import { synthesizeLiteratureReview } from './literatureReview.ts';
 import { generateTitleAndObjectives } from './titleAndObjectives.ts';
 import { generateAbstract } from './abstract.ts';
-import { generateReferences } from './references.ts';
 import type { ResearchRequest, ApiKeys } from './types.ts';
 
 serve(async (req) => {
@@ -31,7 +30,12 @@ serve(async (req) => {
       .single();
 
     if (apiKeysError || !apiKeys) {
-      throw new Error('API keys not found');
+      console.error('API keys error:', apiKeysError);
+      throw new Error('API keys not found. Please ensure you have set up your OpenRouter API key in the settings.');
+    }
+
+    if (!apiKeys.openrouter_key) {
+      throw new Error('OpenRouter API key is not set. Please add your OpenRouter API key in the settings.');
     }
 
     // Create research request
@@ -45,7 +49,11 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (requestError) throw requestError;
+    if (requestError) {
+      throw requestError;
+    }
+
+    console.log('Starting research process...');
 
     // Generate search terms and perform search
     const searchTerms = await generateSearchTerms(description, apiKeys.openrouter_key);
@@ -54,24 +62,13 @@ serve(async (req) => {
     const searchResults = await performSearch(searchTerms, apiKeys.serper_key);
     console.log('Search results retrieved:', searchResults.length);
 
-    // Store search results
-    const { error: searchResultsError } = await supabaseClient
-      .from('search_results')
-      .insert({
-        research_request_id: requestData.id,
-        search_provider: 'serper',
-        search_terms: searchTerms,
-        results: { organic: searchResults }
-      });
-
-    if (searchResultsError) throw searchResultsError;
-
-    // Generate literature review using search results
+    // Generate literature review
     const literatureReview = await synthesizeLiteratureReview(
       searchResults,
       description,
       apiKeys.openrouter_key
     );
+    console.log('Literature review generated');
 
     // Store literature review
     const { error: litReviewError } = await supabaseClient
@@ -91,6 +88,7 @@ serve(async (req) => {
       literatureReview,
       apiKeys.openrouter_key
     );
+    console.log('Title and objectives generated');
 
     // Store title and objectives
     const { error: objectivesError } = await supabaseClient
@@ -104,12 +102,13 @@ serve(async (req) => {
 
     if (objectivesError) throw objectivesError;
 
-    // Generate abstract
+    // Generate abstract using title, objectives and literature review
     const abstract = await generateAbstract(
       titleAndObjectives,
       literatureReview,
       apiKeys.openrouter_key
     );
+    console.log('Abstract generated');
 
     // Store abstract
     const { error: abstractError } = await supabaseClient
@@ -122,21 +121,6 @@ serve(async (req) => {
       });
 
     if (abstractError) throw abstractError;
-
-    // Generate references from search results
-    const references = await generateReferences(searchResults, apiKeys.openrouter_key);
-
-    // Store references
-    const { error: referencesError } = await supabaseClient
-      .from('research_proposal_components')
-      .insert({
-        research_request_id: requestData.id,
-        component_type: 'references',
-        content: references,
-        status: 'completed'
-      });
-
-    if (referencesError) throw referencesError;
 
     // Update research request status
     const { error: updateError } = await supabaseClient
