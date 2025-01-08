@@ -30,12 +30,7 @@ serve(async (req) => {
       .single();
 
     if (apiKeysError || !apiKeys) {
-      console.error('API keys error:', apiKeysError);
-      throw new Error('API keys not found. Please ensure you have set up your OpenRouter API key in the settings.');
-    }
-
-    if (!apiKeys.openrouter_key) {
-      throw new Error('OpenRouter API key is not set. Please add your OpenRouter API key in the settings.');
+      throw new Error('API keys not found');
     }
 
     // Create research request
@@ -49,11 +44,7 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (requestError) {
-      throw requestError;
-    }
-
-    console.log('Starting research process...');
+    if (requestError) throw requestError;
 
     // Generate search terms and perform search
     const searchTerms = await generateSearchTerms(description, apiKeys.openrouter_key);
@@ -62,13 +53,24 @@ serve(async (req) => {
     const searchResults = await performSearch(searchTerms, apiKeys.serper_key);
     console.log('Search results retrieved:', searchResults.length);
 
-    // Generate literature review
+    // Store search results
+    const { error: searchResultsError } = await supabaseClient
+      .from('search_results')
+      .insert({
+        research_request_id: requestData.id,
+        search_provider: 'serper',
+        search_terms: searchTerms,
+        results: { organic: searchResults }
+      });
+
+    if (searchResultsError) throw searchResultsError;
+
+    // Generate literature review using search results
     const literatureReview = await synthesizeLiteratureReview(
       searchResults,
       description,
       apiKeys.openrouter_key
     );
-    console.log('Literature review generated');
 
     // Store literature review
     const { error: litReviewError } = await supabaseClient
@@ -88,7 +90,6 @@ serve(async (req) => {
       literatureReview,
       apiKeys.openrouter_key
     );
-    console.log('Title and objectives generated');
 
     // Store title and objectives
     const { error: objectivesError } = await supabaseClient
@@ -102,13 +103,12 @@ serve(async (req) => {
 
     if (objectivesError) throw objectivesError;
 
-    // Generate abstract using title, objectives and literature review
+    // Generate abstract
     const abstract = await generateAbstract(
       titleAndObjectives,
       literatureReview,
       apiKeys.openrouter_key
     );
-    console.log('Abstract generated');
 
     // Store abstract
     const { error: abstractError } = await supabaseClient

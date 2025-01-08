@@ -44,11 +44,6 @@ export const ReferenceOrganizer = ({ searchResults }: ReferenceOrganizerProps) =
     setOrganizedReferences(sortedReferences);
   };
 
-  const formatVancouverStyle = (ref: Reference, index: number) => {
-    // Vancouver style: [1] Author. Title. URL
-    return `[${index + 1}] ${ref.title}. Available from: ${ref.link}`;
-  };
-
   return (
     <Card className="p-6">
       <div className="flex items-center gap-2 mb-4">
@@ -65,9 +60,13 @@ export const ReferenceOrganizer = ({ searchResults }: ReferenceOrganizerProps) =
           organizedReferences.map((ref, index) => (
             <div key={ref.link} className="flex items-start gap-2 p-3 bg-gray-50 rounded-md">
               <Link className="h-4 w-4 mt-1 flex-shrink-0 text-sky-600" />
-              <p className="text-sm">
-                {formatVancouverStyle(ref, index)}
-              </p>
+              <div className="text-sm">
+                <p className="font-medium text-sky-900">{ref.title}</p>
+                <a href={ref.link} target="_blank" rel="noopener noreferrer" 
+                   className="text-sky-600 hover:underline break-all">
+                  {ref.link}
+                </a>
+              </div>
             </div>
           ))
         ) : (
