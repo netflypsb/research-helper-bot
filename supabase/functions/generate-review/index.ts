@@ -6,6 +6,7 @@ import { performSearch } from './serper.ts';
 import { synthesizeLiteratureReview } from './literatureReview.ts';
 import { generateTitleAndObjectives } from './titleAndObjectives.ts';
 import { generateAbstract } from './abstract.ts';
+import { generateReferences } from './references.ts';
 import type { ResearchRequest, ApiKeys } from './types.ts';
 
 serve(async (req) => {
@@ -121,6 +122,21 @@ serve(async (req) => {
       });
 
     if (abstractError) throw abstractError;
+
+    // Generate references from search results
+    const references = await generateReferences(searchResults, apiKeys.openrouter_key);
+
+    // Store references
+    const { error: referencesError } = await supabaseClient
+      .from('research_proposal_components')
+      .insert({
+        research_request_id: requestData.id,
+        component_type: 'references',
+        content: references,
+        status: 'completed'
+      });
+
+    if (referencesError) throw referencesError;
 
     // Update research request status
     const { error: updateError } = await supabaseClient

@@ -96,7 +96,7 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => {
       </TabsContent>
 
       <TabsContent value="references">
-        <ReferenceOrganizer searchResults={searchResults} />
+        <ReferenceOrganizer searchResults={searchResults} components={components} />
       </TabsContent>
     </Tabs>
   );
