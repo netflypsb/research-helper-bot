@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Link, Database, SortAscending } from "lucide-react";
+import { Link, Database, ArrowUpAZ } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface Reference {
@@ -54,7 +54,7 @@ export const ReferenceOrganizer = ({ searchResults }: ReferenceOrganizerProps) =
         <Database className="h-5 w-5 text-sky-600" />
         <h3 className="text-lg font-semibold text-sky-900">Reference List</h3>
         <div className="flex items-center gap-1 ml-auto text-sm text-gray-500">
-          <SortAscending className="h-4 w-4" />
+          <ArrowUpAZ className="h-4 w-4" />
           <span>Sorted alphabetically</span>
         </div>
       </div>
