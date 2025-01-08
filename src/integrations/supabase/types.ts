@@ -107,6 +107,44 @@ export type Database = {
         }
         Relationships: []
       }
+      search_results: {
+        Row: {
+          created_at: string | null
+          id: string
+          research_request_id: string
+          results: Json
+          search_provider: string
+          search_terms: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          research_request_id: string
+          results: Json
+          search_provider: string
+          search_terms: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          research_request_id?: string
+          results?: Json
+          search_provider?: string
+          search_terms?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_results_research_request_id_fkey"
+            columns: ["research_request_id"]
+            isOneToOne: false
+            referencedRelation: "research_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
