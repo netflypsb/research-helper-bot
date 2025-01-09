@@ -43,16 +43,11 @@ const Header = () => {
 
   const handleSignOut = async () => {
     try {
-      // First clear the local session
-      await supabase.auth.clearSession();
-      
-      // Then attempt to sign out
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        // If there's an error but it's just about session not found, we can ignore it
         if (error.message.includes("session_not_found")) {
-          // Still proceed with local cleanup
+          // Handle case where session is already cleared
           setIsAuthenticated(false);
           navigate("/login");
           toast({
@@ -63,17 +58,17 @@ const Header = () => {
         throw error;
       }
 
+      setIsAuthenticated(false);
       navigate("/login");
       toast({
         title: "Signed out successfully",
       });
     } catch (error: any) {
       console.error("Error during sign out:", error);
-      // If we get here, there was a more serious error
       toast({
         variant: "destructive",
         title: "Error signing out",
-        description: "You have been signed out locally. Please refresh the page.",
+        description: "Please try again or refresh the page",
       });
       // Force navigate to login anyway for safety
       navigate("/login");
