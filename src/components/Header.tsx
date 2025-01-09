@@ -27,7 +27,17 @@ const Header = () => {
 
   const checkUser = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        if (error.message.includes("token_refresh")) {
+          // Handle token refresh error by signing out
+          await handleSignOut();
+          return;
+        }
+        throw error;
+      }
+      
       setIsAuthenticated(!!session);
     } catch (error: any) {
       console.error("Error checking auth state:", error);
@@ -36,6 +46,8 @@ const Header = () => {
         title: "Authentication Error",
         description: "Please try logging in again",
       });
+      // Force sign out on auth error
+      await handleSignOut();
     } finally {
       setIsLoading(false);
     }
@@ -43,21 +55,7 @@ const Header = () => {
 
   const handleSignOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        if (error.message.includes("session_not_found")) {
-          // Handle case where session is already cleared
-          setIsAuthenticated(false);
-          navigate("/login");
-          toast({
-            title: "Signed out successfully",
-          });
-          return;
-        }
-        throw error;
-      }
-
+      await supabase.auth.signOut({ scope: 'local' });
       setIsAuthenticated(false);
       navigate("/login");
       toast({
@@ -68,9 +66,10 @@ const Header = () => {
       toast({
         variant: "destructive",
         title: "Error signing out",
-        description: "Please try again or refresh the page",
+        description: "Please refresh the page",
       });
-      // Force navigate to login anyway for safety
+      // Force navigate to login anyway
+      setIsAuthenticated(false);
       navigate("/login");
     }
   };
