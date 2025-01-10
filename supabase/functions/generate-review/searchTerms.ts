@@ -8,7 +8,7 @@ export async function generateSearchTerms(description: string, openrouterKey: st
   }
 
   const systemPrompt = 'You are a research strategist. Generate relevant search terms for academic research.';
-  const prompt = `Generate 3-5 specific search terms for the following research topic: ${description}`;
+  const prompt = `Generate 3 search terms for the following research topic: ${description}`;
   
   try {
     const terms = await generateWithOpenRouter(prompt, systemPrompt, openrouterKey);
