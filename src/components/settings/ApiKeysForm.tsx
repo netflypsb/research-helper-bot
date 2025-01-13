@@ -10,9 +10,10 @@ interface ApiKeysFormProps {
   onChange: (newApiKeys: any) => void;
   onSave: () => void;
   isLoading: boolean;
+  disabled?: boolean;
 }
 
-export const ApiKeysForm = ({ apiKeys, onChange, onSave, isLoading }: ApiKeysFormProps) => {
+export const ApiKeysForm = ({ apiKeys, onChange, onSave, isLoading, disabled }: ApiKeysFormProps) => {
   return (
     <div className="space-y-4">
       <ApiKeyInput
@@ -20,23 +21,26 @@ export const ApiKeysForm = ({ apiKeys, onChange, onSave, isLoading }: ApiKeysFor
         value={apiKeys.openrouter_key}
         onChange={(value) => onChange({ ...apiKeys, openrouter_key: value })}
         link="https://openrouter.ai/"
+        disabled={disabled}
       />
       <ApiKeyInput
         label="SERP API Key"
         value={apiKeys.serp_key}
         onChange={(value) => onChange({ ...apiKeys, serp_key: value })}
         link="https://serpapi.com/"
+        disabled={disabled}
       />
       <ApiKeyInput
         label="Serper API Key"
         value={apiKeys.serper_key}
         onChange={(value) => onChange({ ...apiKeys, serper_key: value })}
         link="https://serper.dev/"
+        disabled={disabled}
       />
       <Button 
         className="w-full bg-primary hover:bg-sky-700"
         onClick={onSave}
-        disabled={isLoading}
+        disabled={isLoading || disabled}
       >
         {isLoading ? "Saving..." : "Save API Keys"}
       </Button>

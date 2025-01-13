@@ -6,16 +6,17 @@ interface ApiKeyInputProps {
   value: string;
   onChange: (value: string) => void;
   link?: string;
+  disabled?: boolean;
 }
 
-export const ApiKeyInput = ({ label, value, onChange, link }: ApiKeyInputProps) => {
+export const ApiKeyInput = ({ label, value, onChange, link, disabled }: ApiKeyInputProps) => {
   return (
     <div>
       <div className="flex items-center gap-2 mb-1">
         <label className="block text-sm font-medium text-sky-700">
           {label}
         </label>
-        {link && (
+        {link && !disabled && (
           <a 
             href={link}
             target="_blank"
@@ -32,6 +33,8 @@ export const ApiKeyInput = ({ label, value, onChange, link }: ApiKeyInputProps) 
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Enter API key" 
+        disabled={disabled}
+        className={disabled ? "bg-gray-100" : ""}
       />
     </div>
   );
