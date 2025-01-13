@@ -34,7 +34,19 @@ export const SidebarHistory = ({ onProposalClick, onDelete }: SidebarHistoryProp
       .order('created_at', { ascending: false });
 
     if (data) {
-      setProposals(data);
+      // Filter out duplicates based on description and created_at
+      const uniqueProposals = data.reduce((acc: ResearchProposal[], current) => {
+        const isDuplicate = acc.find(
+          item => item.description === current.description && 
+          new Date(item.created_at).getTime() - new Date(current.created_at).getTime() < 1000 // Within 1 second
+        );
+        if (!isDuplicate) {
+          acc.push(current);
+        }
+        return acc;
+      }, []);
+      
+      setProposals(uniqueProposals);
     }
   };
 
