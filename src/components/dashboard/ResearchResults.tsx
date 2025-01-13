@@ -118,6 +118,7 @@ export const ResearchResults = () => {
                       'research-proposal.docx'
                     )}
                     onDelete={() => handleDelete(review.id)}
+                    components={review.components}
                   />
                 </div>
                 <p className="text-sm text-gray-600 mb-4">{review.description}</p>

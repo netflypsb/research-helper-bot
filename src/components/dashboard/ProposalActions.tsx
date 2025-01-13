@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Download, FileDown, FilePdf, Trash2 } from "lucide-react";
+import { Download, FileDown, FileText, Trash2 } from "lucide-react";
 import { exportToPdf, exportToDoc } from "@/utils/documentExport";
 
 interface ProposalActionsProps {
@@ -28,7 +28,7 @@ export const ProposalActions = ({ hasContent, onDownload, onDelete, components }
           className="flex items-center gap-2"
           onClick={() => exportToPdf(components)}
         >
-          <FilePdf className="h-4 w-4" />
+          <FileText className="h-4 w-4" />
           Export PDF
         </Button>
       </>
