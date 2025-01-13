@@ -48,13 +48,9 @@ export const useApiKeyUsage = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    const { error } = await supabase
-      .from("api_key_usage")
-      .update({ 
-        uses_count: supabase.sql`uses_count + 1`,
-        updated_at: new Date().toISOString()
-      })
-      .eq("user_id", session.user.id);
+    const { error } = await supabase.rpc('increment_api_key_usage', {
+      user_id_param: session.user.id
+    });
 
     if (error) {
       console.error("Error incrementing API key usage:", error);
