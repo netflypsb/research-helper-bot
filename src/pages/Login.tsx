@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { AuthError } from "@supabase/supabase-js";
+import { AuthError, AuthApiError } from "@supabase/supabase-js";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -48,7 +48,17 @@ const Login = () => {
         password: formData.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error instanceof AuthApiError && error.status === 400) {
+          toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Invalid email or password. Please check your credentials and try again.",
+          });
+          return;
+        }
+        throw error;
+      }
 
       // Success toast
       toast({
@@ -59,7 +69,7 @@ const Login = () => {
     } catch (error: any) {
       const errorMessage = error instanceof AuthError 
         ? error.message 
-        : "An error occurred during login";
+        : "An unexpected error occurred during login. Please try again.";
         
       toast({
         variant: "destructive",
