@@ -11,6 +11,7 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
       <TabsTrigger value="all">All Components</TabsTrigger>
       <TabsTrigger value="title">Title & Objectives</TabsTrigger>
       <TabsTrigger value="literature">Literature Review</TabsTrigger>
+      <TabsTrigger value="methodology">Methodology</TabsTrigger>
       <TabsTrigger value="abstract">Abstract</TabsTrigger>
     </TabsList>
 
@@ -48,6 +49,18 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
         </div>
       ) : (
         <p className="text-sm text-amber-600">No literature review available</p>
+      )}
+    </TabsContent>
+
+    <TabsContent value="methodology">
+      {components?.find(c => c.component_type === 'methodology')?.content ? (
+        <div className="bg-gray-50 p-4 rounded-md">
+          <p className="text-sm whitespace-pre-wrap">
+            {components.find(c => c.component_type === 'methodology')?.content}
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm text-amber-600">No methodology section available</p>
       )}
     </TabsContent>
 

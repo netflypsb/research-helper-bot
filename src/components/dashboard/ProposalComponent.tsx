@@ -13,6 +13,8 @@ export const ProposalComponent = ({ type, content, status }: ProposalComponentPr
         return 'Literature Review';
       case 'title_and_objectives':
         return 'Title & Objectives';
+      case 'methodology':
+        return 'Methodology';
       case 'abstract':
         return 'Abstract';
       default:

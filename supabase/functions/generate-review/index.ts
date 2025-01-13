@@ -6,6 +6,7 @@ import { performSearch } from './serper.ts';
 import { synthesizeLiteratureReview } from './literatureReview.ts';
 import { generateTitleAndObjectives } from './titleAndObjectives.ts';
 import { generateAbstract } from './abstract.ts';
+import { generateMethodology } from './methodology.ts';
 import type { ResearchRequest, ApiKeys } from './types.ts';
 
 serve(async (req) => {
@@ -101,6 +102,25 @@ serve(async (req) => {
       });
 
     if (objectivesError) throw objectivesError;
+
+    // Generate methodology section
+    const methodology = await generateMethodology(
+      description,
+      apiKeys.openrouter_key
+    );
+    console.log('Methodology section generated');
+
+    // Store methodology
+    const { error: methodologyError } = await supabaseClient
+      .from('research_proposal_components')
+      .insert({
+        research_request_id: requestData.id,
+        component_type: 'methodology',
+        content: methodology,
+        status: 'completed'
+      });
+
+    if (methodologyError) throw methodologyError;
 
     // Generate abstract using title, objectives and literature review
     const abstract = await generateAbstract(
