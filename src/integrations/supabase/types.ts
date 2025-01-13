@@ -39,6 +39,30 @@ export type Database = {
         }
         Relationships: []
       }
+      api_key_usage: {
+        Row: {
+          id: string
+          user_id: string
+          uses_count: number
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          uses_count?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          uses_count?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       research_proposal_components: {
         Row: {
           component_type: string
@@ -150,7 +174,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_api_key_usage: {
+        Args: { user_id_param: string }
+        Returns: void
+      }
     }
     Enums: {
       [_ in never]: never
