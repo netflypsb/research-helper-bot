@@ -1,4 +1,4 @@
-import { Card } from "@/components/ui/card";
+import ReactMarkdown from 'react-markdown';
 
 interface ProposalComponentProps {
   type: string;
@@ -27,7 +27,7 @@ export const ProposalComponent = ({ type, content, status }: ProposalComponentPr
       <h4 className="font-medium text-sky-700 mb-2">{getTitle(type)}</h4>
       {content ? (
         <div className="prose max-w-none">
-          <p className="text-sm whitespace-pre-wrap">{content}</p>
+          <ReactMarkdown>{content}</ReactMarkdown>
         </div>
       ) : (
         <p className="text-sm text-amber-600">
