@@ -23,7 +23,7 @@ export const ResearchForm = () => {
   const [wordCount, setWordCount] = useState(0);
 
   useEffect(() => {
-    let interval: number;
+    let interval: NodeJS.Timeout;
     if (isLoading) {
       interval = setInterval(() => {
         setLoadingMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
