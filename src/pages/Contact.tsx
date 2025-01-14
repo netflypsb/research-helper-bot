@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
 import { useRouter } from "next/router";
+import Subheader from "@/components/Subheader";
 
 const Contact = () => {
   const router = useRouter();
