@@ -20,7 +20,7 @@ export async function generateWithOpenRouter(
         'HTTP-Referer': 'https://lovable.dev',
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.2-1b-instruct',
+        model: 'openai/gpt-4o-mini-2024-07-18',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
