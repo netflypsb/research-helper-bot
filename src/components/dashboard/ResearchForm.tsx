@@ -29,11 +29,15 @@ export const ResearchForm = () => {
 
       if (requestError) throw requestError;
 
+      // Get the useMedResearchKeys value from localStorage
+      const useMedResearchKeys = localStorage.getItem("useMedResearchKeys") === "true";
+
       // Then call the Edge Function
       const { data, error } = await supabase.functions.invoke("generate-review", {
         body: {
           description,
           userId: session.user.id,
+          useMedResearchKeys,
         },
       });
 

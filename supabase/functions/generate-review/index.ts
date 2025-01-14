@@ -20,19 +20,36 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { description, userId } = await req.json();
-    console.log('Received request:', { description, userId });
+    const { description, userId, useMedResearchKeys } = await req.json();
+    console.log('Received request:', { description, userId, useMedResearchKeys });
 
-    // Fetch API keys
-    const { data: apiKeys, error: apiKeysError } = await supabaseClient
-      .from('api_keys')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    let apiKeys: ApiKeys;
 
-    if (apiKeysError || !apiKeys) {
-      console.error('API keys error:', apiKeysError);
-      throw new Error('API keys not found. Please ensure you have set up your OpenRouter API key in the settings.');
+    if (useMedResearchKeys) {
+      console.log('Using MedResearch API keys');
+      apiKeys = {
+        openrouter_key: Deno.env.get('MEDRESEARCH_OPENROUTER_KEY') ?? '',
+        serp_key: Deno.env.get('MEDRESEARCH_SERP_KEY') ?? '',
+        serper_key: Deno.env.get('MEDRESEARCH_SERPER_KEY') ?? '',
+      };
+
+      // Increment usage count
+      await supabaseClient.rpc('increment_api_key_usage', { user_id_param: userId });
+    } else {
+      console.log('Fetching user API keys');
+      // Fetch API keys
+      const { data: userApiKeys, error: apiKeysError } = await supabaseClient
+        .from('api_keys')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (apiKeysError || !userApiKeys) {
+        console.error('API keys error:', apiKeysError);
+        throw new Error('API keys not found. Please ensure you have set up your OpenRouter API key in the settings.');
+      }
+
+      apiKeys = userApiKeys;
     }
 
     if (!apiKeys.openrouter_key) {
