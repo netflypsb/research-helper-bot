@@ -2,7 +2,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
 import { useRouter } from "next/router";
-import Subheader from "@/components/Subheader";
 
 const Contact = () => {
   const router = useRouter();
@@ -50,25 +49,6 @@ const Contact = () => {
             />
             <h2 className="text-center text-xl font-bold text-sky-900">
               Email
-            </h2>
-          </Card>
-        </div>
-
-        {/* BuyMeACoffee Card */}
-        <div className="mt-8">
-          <Card
-            className="p-6 cursor-pointer hover:shadow-lg transition mx-auto max-w-sm"
-            onClick={() => {
-              router.push("https://www.buymeacoffee.com"); // Replace with your actual BuyMeACoffee link
-            }}
-          >
-            <img
-              src="/images/buymeacoffee-logo.png"
-              alt="BuyMeACoffee Logo"
-              className="h-16 mx-auto mb-4"
-            />
-            <h2 className="text-center text-xl font-bold text-sky-900">
-              BuyMeACoffee
             </h2>
           </Card>
         </div>
