@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 const Contact = () => {
   const router = useRouter();
