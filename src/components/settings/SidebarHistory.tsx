@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, FileDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { exportToDoc } from "@/utils/documentExport";
 
 interface ResearchProposal {
   id: string;
@@ -83,6 +84,39 @@ export const SidebarHistory = ({ onProposalClick, onDelete }: SidebarHistoryProp
     }
   };
 
+  const handleDownload = async (proposalId: string) => {
+    try {
+      const { data: components, error } = await supabase
+        .from("research_proposal_components")
+        .select("*")
+        .eq("research_request_id", proposalId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (components && components.length > 0) {
+        exportToDoc(components);
+        toast({
+          title: "Success",
+          description: "Research proposal downloaded successfully",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No content available for download",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error downloading proposal:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to download research proposal",
+      });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">History</h3>
@@ -94,18 +128,28 @@ export const SidebarHistory = ({ onProposalClick, onDelete }: SidebarHistoryProp
           >
             <button
               onClick={() => onProposalClick(proposal.id)}
-              className="text-sm text-left hover:text-primary truncate max-w-[80%]"
+              className="text-sm text-left hover:text-primary truncate max-w-[60%]"
             >
               {proposal.description}
             </button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => handleDelete(proposal.id)}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
+            <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDownload(proposal.id)}
+                className="text-primary"
+              >
+                <FileDown className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDelete(proposal.id)}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         ))}
       </div>
