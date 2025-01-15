@@ -14,27 +14,12 @@ const Contact = () => {
           Thank You for trying out MedResearch AI
         </h1>
         <p className="text-sky-700 mb-8 text-center text-sm">
-          Feedback, Suggestions, Feature requests are welcomed
+          We're currently in Alpha phase and we apologize for any issues you might encounter.
+          Your feedback, suggestions, and feature requests are invaluable to us as we work
+          to improve the platform.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* TikTok Card */}
-          <Card
-            className="p-6 cursor-pointer hover:shadow-lg transition"
-            onClick={() => {
-              router.push("https://www.tiktok.com/@netflyp4d");
-            }}
-          >
-            <img
-              src="/images/tiktok-logo.png"
-              alt="TikTok Logo"
-              className="h-16 mx-auto mb-4"
-            />
-            <h2 className="text-center text-xl font-bold text-sky-900">
-              TikTok
-            </h2>
-          </Card>
-
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Email Card */}
           <Card
             className="p-6 cursor-pointer hover:shadow-lg transition"
@@ -48,7 +33,41 @@ const Contact = () => {
               className="h-16 mx-auto mb-4"
             />
             <h2 className="text-center text-xl font-bold text-sky-900">
-              Email
+              Email Us
+            </h2>
+          </Card>
+
+          {/* TikTok Card */}
+          <Card
+            className="p-6 cursor-pointer hover:shadow-lg transition"
+            onClick={() => {
+              window.open("https://www.tiktok.com/@netflyp4d", "_blank");
+            }}
+          >
+            <img
+              src="/images/tiktok-logo.png"
+              alt="TikTok Logo"
+              className="h-16 mx-auto mb-4"
+            />
+            <h2 className="text-center text-xl font-bold text-sky-900">
+              Follow on TikTok
+            </h2>
+          </Card>
+
+          {/* Blog Card */}
+          <Card
+            className="p-6 cursor-pointer hover:shadow-lg transition"
+            onClick={() => {
+              window.open("https://buymeacoffee.com/magister", "_blank");
+            }}
+          >
+            <img
+              src="/images/blog-logo.png"
+              alt="Blog Logo"
+              className="h-16 mx-auto mb-4"
+            />
+            <h2 className="text-center text-xl font-bold text-sky-900">
+              Visit Our Blog
             </h2>
           </Card>
         </div>
