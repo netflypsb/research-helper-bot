@@ -5,30 +5,45 @@ export async function synthesizeLiteratureReview(
   description: string,
   openrouterKey: string
 ): Promise<string> {
-  const context = searchResults.map(result => result.snippet).join('\n');
-  const systemPrompt = `You are a research synthesizer tasked with creating comprehensive literature reviews. 
-Follow this structure strictly:
+  console.log('Synthesizing literature review from', searchResults.length, 'search results');
+  
+  const context = searchResults
+    .map(result => result.snippet)
+    .join('\n\n');
 
-1. Title: "Literature Review: [Research Topic]"
+  const systemPrompt = `You are a medical research synthesizer. Create a comprehensive literature review (1000-1200 words) following this structure:
 
-2. Overview of Relevant Studies (400-500 words):
-- Synthesize and present key findings from recent research
-- Highlight methodologies used
+1. Current State of Knowledge (400-450 words):
+- Synthesize key findings from recent research
 - Present major theoretical frameworks
+- Highlight significant methodologies
 
-3. Identification of Research Gaps (300-400 words):
-- Analyze limitations in current research
+2. Critical Analysis (300-350 words):
+- Evaluate research quality
+- Compare conflicting findings
+- Identify methodological strengths/weaknesses
+
+3. Research Gaps (200-250 words):
 - Identify unexplored areas
-- Point out methodological gaps
+- Point out methodological limitations
+- Highlight theoretical gaps
 
-4. Building on Existing Work (300-400 words):
-- Explain how the proposed study addresses identified gaps
-- Discuss potential contributions to the field
-- Connect with existing theoretical frameworks`;
+4. Research Justification (100-150 words):
+- Connect proposed study to gaps
+- Explain potential contributions
+- Establish theoretical framework`;
 
-  return await generateWithOpenRouter(
-    `Create a structured literature review for the topic: ${description}\n\nBased on these findings:\n${context}`,
-    systemPrompt,
-    openrouterKey
-  );
+  try {
+    const content = await generateWithOpenRouter(
+      `Create a structured literature review for: ${description}\n\nBased on these findings:\n${context}`,
+      systemPrompt,
+      openrouterKey
+    );
+    
+    console.log('Successfully generated literature review');
+    return content;
+  } catch (error) {
+    console.error('Error generating literature review:', error);
+    throw new Error(`Failed to generate literature review: ${error.message}`);
+  }
 }

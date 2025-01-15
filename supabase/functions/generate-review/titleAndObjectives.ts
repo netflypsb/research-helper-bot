@@ -5,27 +5,39 @@ export async function generateTitleAndObjectives(
   literatureReview: string,
   openrouterKey: string
 ): Promise<string> {
-  const systemPrompt = `You are a medical research proposal expert. Based on the provided research description and literature review, generate:
+  console.log('Generating title and objectives for description:', description.substring(0, 100) + '...');
 
-1. Title (10-20 words):
-- Concise and descriptive
-- Clearly summarizes the research topic and focus
-- Reflects the identified research gaps
+  const systemPrompt = `You are a medical research proposal expert. Create a comprehensive title and objectives section following this structure:
 
-2. Objectives (100-200 words total):
-a) General Objective:
-- State the broad goal of the research
-- Align with identified research gaps
-- Clear and achievable
+1. Title (15-20 words):
+- Clear and concise representation of the research
+- Include key variables or relationships
+- Use standard medical/scientific terminology
 
-b) Specific Objectives:
-- List 3-4 measurable and precise goals
-- Directly related to research questions
-- Logically support the general objective`;
+2. Research Objectives (300-400 words total):
 
-  return await generateWithOpenRouter(
-    `Generate a title and objectives based on this research description:\n${description}\n\nAnd this literature review:\n${literatureReview}`,
-    systemPrompt,
-    openrouterKey
-  );
+General Objective (100 words):
+- State the primary aim of the research
+- Use action verbs (e.g., determine, evaluate, assess)
+- Align with the research gap identified
+
+Specific Objectives (200-300 words):
+- List 3-4 measurable objectives
+- Each should contribute to the general objective
+- Use SMART criteria (Specific, Measurable, Achievable, Relevant, Time-bound)
+- Begin each with an action verb`;
+
+  try {
+    const content = await generateWithOpenRouter(
+      `Generate a title and objectives based on:\n\nResearch Description:\n${description}\n\nLiterature Review Context:\n${literatureReview}`,
+      systemPrompt,
+      openrouterKey
+    );
+    
+    console.log('Successfully generated title and objectives');
+    return content;
+  } catch (error) {
+    console.error('Error generating title and objectives:', error);
+    throw new Error(`Failed to generate title and objectives: ${error.message}`);
+  }
 }
