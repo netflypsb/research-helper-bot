@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ProposalTabs } from "./ProposalTabs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ProposalComponent } from "./ProposalComponent";
 
 interface ResearchOutputProps {
   viewMode: "sections" | "preview";
@@ -16,7 +17,6 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
   useEffect(() => {
     loadLatestProposal();
     
-    // Add event listeners for loading and clearing proposals
     const handleLoadProposal = (event: any) => {
       setComponents(event.detail.components);
     };
@@ -57,22 +57,20 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
   };
 
   const renderPreview = () => {
-    const sections = ['title_and_objectives', 'literature_review', 'abstract'];
+    const sections = ['title_and_objectives', 'abstract', 'literature_review', 'methodology'];
     return (
       <div className="space-y-8">
         {sections.map((section) => {
           const component = components?.find(c => c.component_type === section);
-          return component?.content ? (
-            <div key={section} className="prose max-w-none">
-              <h3 className="text-lg font-semibold text-sky-900 mb-2">
-                {section === 'title_and_objectives' ? 'Title & Objectives' :
-                 section === 'literature_review' ? 'Literature Review' : 'Abstract'}
-              </h3>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <p className="text-sm whitespace-pre-wrap">{component.content}</p>
-              </div>
-            </div>
-          ) : null;
+          if (!component?.content) return null;
+          return (
+            <ProposalComponent
+              key={section}
+              type={section}
+              content={component.content}
+              status={component.status}
+            />
+          );
         })}
       </div>
     );
@@ -81,7 +79,7 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-sky-900">Research Proposal</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Research Proposal</h2>
         <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as "sections" | "preview")}>
           <ToggleGroupItem value="sections" aria-label="Sections view">
             <List className="h-4 w-4" />
@@ -95,7 +93,9 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
       {viewMode === "sections" ? (
         <ProposalTabs components={components} />
       ) : (
-        renderPreview()
+        <div className="overflow-auto">
+          {renderPreview()}
+        </div>
       )}
     </Card>
   );

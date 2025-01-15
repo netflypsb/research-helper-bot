@@ -16,7 +16,7 @@ export const ProposalActions = ({ hasContent, onDownload, onDelete, components }
         <Button
           variant="outline"
           size="sm"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 text-sky-700 hover:text-sky-800"
           onClick={() => exportToDoc(components)}
         >
           <FileDown className="h-4 w-4" />
@@ -25,7 +25,7 @@ export const ProposalActions = ({ hasContent, onDownload, onDelete, components }
         <Button
           variant="outline"
           size="sm"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 text-sky-700 hover:text-sky-800"
           onClick={() => exportToPdf(components)}
         >
           <FileText className="h-4 w-4" />

@@ -10,18 +10,18 @@ interface ProposalTabsProps {
 export const ProposalTabs = ({ components }: ProposalTabsProps) => (
   <Tabs defaultValue="all" className="w-full">
     <ScrollArea className="w-full whitespace-nowrap mb-4">
-      <TabsList className="inline-flex h-10 items-center justify-start">
-        <TabsTrigger value="all">All Components</TabsTrigger>
-        <TabsTrigger value="title">Title & Objectives</TabsTrigger>
-        <TabsTrigger value="literature">Literature Review</TabsTrigger>
-        <TabsTrigger value="methodology">Methodology</TabsTrigger>
-        <TabsTrigger value="abstract">Abstract</TabsTrigger>
+      <TabsList className="inline-flex h-10 items-center justify-start p-1 bg-gray-50">
+        <TabsTrigger value="all" className="px-4">All Components</TabsTrigger>
+        <TabsTrigger value="title" className="px-4">Title & Objectives</TabsTrigger>
+        <TabsTrigger value="literature" className="px-4">Literature Review</TabsTrigger>
+        <TabsTrigger value="methodology" className="px-4">Methodology</TabsTrigger>
+        <TabsTrigger value="abstract" className="px-4">Abstract</TabsTrigger>
       </TabsList>
       <ScrollBar orientation="horizontal" />
     </ScrollArea>
 
-    <TabsContent value="all">
-      <div className="space-y-6">
+    <TabsContent value="all" className="mt-6">
+      <div className="space-y-8">
         {components?.map((component) => (
           <ProposalComponent
             key={component.id}
@@ -35,11 +35,11 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
 
     <TabsContent value="title">
       {components?.find(c => c.component_type === 'title_and_objectives')?.content ? (
-        <div className="prose max-w-none bg-gray-50 p-4 rounded-md">
-          <ReactMarkdown>
-            {components.find(c => c.component_type === 'title_and_objectives')?.content || ''}
-          </ReactMarkdown>
-        </div>
+        <ProposalComponent
+          type="title_and_objectives"
+          content={components.find(c => c.component_type === 'title_and_objectives')?.content}
+          status="completed"
+        />
       ) : (
         <p className="text-sm text-amber-600">No title and objectives available</p>
       )}
@@ -47,11 +47,11 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
 
     <TabsContent value="literature">
       {components?.find(c => c.component_type === 'literature_review')?.content ? (
-        <div className="prose max-w-none bg-gray-50 p-4 rounded-md">
-          <ReactMarkdown>
-            {components.find(c => c.component_type === 'literature_review')?.content || ''}
-          </ReactMarkdown>
-        </div>
+        <ProposalComponent
+          type="literature_review"
+          content={components.find(c => c.component_type === 'literature_review')?.content}
+          status="completed"
+        />
       ) : (
         <p className="text-sm text-amber-600">No literature review available</p>
       )}
@@ -59,11 +59,11 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
 
     <TabsContent value="methodology">
       {components?.find(c => c.component_type === 'methodology')?.content ? (
-        <div className="prose max-w-none bg-gray-50 p-4 rounded-md">
-          <ReactMarkdown>
-            {components.find(c => c.component_type === 'methodology')?.content || ''}
-          </ReactMarkdown>
-        </div>
+        <ProposalComponent
+          type="methodology"
+          content={components.find(c => c.component_type === 'methodology')?.content}
+          status="completed"
+        />
       ) : (
         <p className="text-sm text-amber-600">No methodology section available</p>
       )}
@@ -71,11 +71,11 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
 
     <TabsContent value="abstract">
       {components?.find(c => c.component_type === 'abstract')?.content ? (
-        <div className="prose max-w-none bg-gray-50 p-4 rounded-md">
-          <ReactMarkdown>
-            {components.find(c => c.component_type === 'abstract')?.content || ''}
-          </ReactMarkdown>
-        </div>
+        <ProposalComponent
+          type="abstract"
+          content={components.find(c => c.component_type === 'abstract')?.content}
+          status="completed"
+        />
       ) : (
         <p className="text-sm text-amber-600">No abstract available</p>
       )}
