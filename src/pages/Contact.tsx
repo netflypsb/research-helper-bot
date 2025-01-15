@@ -1,10 +1,10 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card } from "@/components/ui/card";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 const Contact = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 to-white">
