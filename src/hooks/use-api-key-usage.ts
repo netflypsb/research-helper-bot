@@ -13,7 +13,7 @@ export const useApiKeyUsage = () => {
       .from("api_key_usage")
       .select("uses_count")
       .eq("user_id", session.user.id)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== "PGRST116") {
       console.error("Error loading API key usage:", error);
