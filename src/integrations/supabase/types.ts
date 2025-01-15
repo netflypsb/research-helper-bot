@@ -131,6 +131,33 @@ export type Database = {
         }
         Relationships: []
       }
+      schema_templates: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          schema: Json
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          schema: Json
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          schema?: Json
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       search_results: {
         Row: {
           created_at: string | null
