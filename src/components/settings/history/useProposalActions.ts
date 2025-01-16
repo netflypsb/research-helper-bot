@@ -3,7 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { exportToDoc } from "@/utils/documentExport";
 
-export const useProposalActions = (setProposals: (proposals: any[]) => void) => {
+interface ResearchProposal {
+  id: string;
+  description: string;
+  created_at: string;
+}
+
+export const useProposalActions = (
+  setProposals: React.Dispatch<React.SetStateAction<ResearchProposal[]>>
+) => {
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -40,7 +48,7 @@ export const useProposalActions = (setProposals: (proposals: any[]) => void) => 
 
       if (requestError) throw requestError;
 
-      setProposals(prev => prev.filter(p => p.id !== proposalId));
+      setProposals((prev) => prev.filter((p) => p.id !== proposalId));
 
       toast({
         title: "Success",
