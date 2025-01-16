@@ -1,7 +1,9 @@
 import { SearchResult } from './types.ts';
 
-export async function performSearch(searchTerms: string, serperKey: string): Promise<SearchResult[]> {
-  console.log('Performing search with terms:', searchTerms);
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export async function performSearch(searchTerms: string, serperKey: string, retryCount = 0): Promise<SearchResult[]> {
+  console.log('Performing search with terms:', searchTerms, 'attempt:', retryCount + 1);
   
   if (!serperKey) {
     throw new Error('Serper API key is required');
@@ -16,22 +18,32 @@ export async function performSearch(searchTerms: string, serperKey: string): Pro
       },
       body: JSON.stringify({
         q: searchTerms,
-        num: 10, // Increased from 8 to get more comprehensive results
+        num: 10,
         type: 'search',
-        gl: 'us', // Set to US results for academic consistency
+        gl: 'us',
       })
     });
+
+    if (response.status === 429 && retryCount < 3) {
+      console.log('Rate limit hit, retrying after delay...');
+      await delay(2000 * (retryCount + 1)); // Exponential backoff
+      return performSearch(searchTerms, serperKey, retryCount + 1);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Serper API error response:', errorText);
-      throw new Error(`Serper API returned status ${response.status}: ${errorText}`);
+      
+      if (response.status === 429) {
+        throw new Error('Search API rate limit reached. Please try again in a few minutes.');
+      }
+      
+      throw new Error(`Search API returned status ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
     console.log('Search results count:', data.organic?.length || 0);
 
-    // Transform and filter results
     const results = (data.organic || []).map((result: any) => ({
       title: result.title || '',
       link: result.link || '',
@@ -39,7 +51,6 @@ export async function performSearch(searchTerms: string, serperKey: string): Pro
       position: result.position || 0,
       date: result.date || null
     })).filter((result: SearchResult) => 
-      // Filter out results without meaningful content
       result.snippet && result.snippet.length > 50
     );
 
@@ -50,6 +61,6 @@ export async function performSearch(searchTerms: string, serperKey: string): Pro
     return results;
   } catch (error) {
     console.error('Error performing search:', error);
-    throw new Error(`Failed to perform search: ${error.message}`);
+    throw error;
   }
 }

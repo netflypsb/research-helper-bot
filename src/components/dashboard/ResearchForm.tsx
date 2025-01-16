@@ -44,7 +44,6 @@ export const ResearchForm = () => {
       setDescription(text);
       setWordCount(words.length);
     } else {
-      // If over limit, truncate to 500 words
       const truncatedText = words.slice(0, WORD_LIMIT).join(" ");
       setDescription(truncatedText);
       setWordCount(WORD_LIMIT);
@@ -58,7 +57,14 @@ export const ResearchForm = () => {
 
   const handleGenerateReview = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please log in to generate a research proposal.",
+      });
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -87,7 +93,13 @@ export const ResearchForm = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check for specific error messages
+        if (error.message.includes("rate limit")) {
+          throw new Error("The search service is currently busy. Please try again in a few minutes.");
+        }
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -101,10 +113,11 @@ export const ResearchForm = () => {
       // Force a reload of the page to show the new review
       window.location.reload();
     } catch (error: any) {
+      console.error("Generation error:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to generate research proposal. Please try again.",
       });
     } finally {
       setIsLoading(false);
