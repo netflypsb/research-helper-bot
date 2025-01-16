@@ -1,17 +1,28 @@
-export interface ResearchRequest {
-  id: string;
-  user_id: string;
-  description: string;
-  status: string;
-}
-
 export interface SearchResult {
+  title: string;
+  link: string;
   snippet: string;
-  title?: string;
-  link?: string;
+  position: number;
+  date: string | null;
 }
 
 export interface ApiKeys {
-  openrouter_key: string;
-  serper_key: string;
+  openrouterKey: string;
+  serperKey: string;
+  pubmedKey: string;
+}
+
+export interface LiteratureQuery {
+  queryText: string;
+  priority: 'high' | 'medium' | 'low';
+  context?: string;
+}
+
+export interface LiteratureSchema {
+  metadata: {
+    topic: string;
+    subtopics: string[];
+    keyTerms: string[];
+  };
+  queries: LiteratureQuery[];
 }

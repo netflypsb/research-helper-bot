@@ -6,7 +6,7 @@ export async function coordinateResearchGeneration(
   description: string,
   userId: string,
   requestId: string,
-  apiKeys: { openrouterKey: string; serperKey: string }
+  apiKeys: { openrouterKey: string; serperKey: string; pubmedKey: string }
 ) {
   console.log('Starting research generation process for request:', requestId);
   
@@ -16,7 +16,7 @@ export async function coordinateResearchGeneration(
   );
 
   try {
-    // Step 1: Generate and store search results
+    // Step 1: Generate and store search results (now includes both SERPER and PubMed)
     console.log('Performing literature search...');
     const { searchResults } = await generateAndStoreSearchResults(
       description,

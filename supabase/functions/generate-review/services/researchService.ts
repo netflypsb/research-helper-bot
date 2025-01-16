@@ -1,7 +1,7 @@
 import { generateSearchTerms } from '../searchTerms.ts';
 import { performSearch } from '../serper.ts';
+import { performPubMedSearch } from '../pubmed.ts';
 import { ApiKeys } from '../types.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 export async function generateAndStoreSearchResults(
   description: string,
@@ -19,20 +19,41 @@ export async function generateAndStoreSearchResults(
       queries: literatureSchema.queries,
     });
 
-  const searchResults = await Promise.all(
-    literatureSchema.queries.map(query => 
-      performSearch(query.queryText, apiKeys.serperKey)
+  // Perform both SERPER and PubMed searches in parallel
+  const [serperResults, pubmedResults] = await Promise.all([
+    Promise.all(
+      literatureSchema.queries.map(query => 
+        performSearch(query.queryText, apiKeys.serperKey)
+      )
+    ),
+    Promise.all(
+      literatureSchema.queries.map(query =>
+        performPubMedSearch(query.queryText, apiKeys.pubmedKey)
+      )
     )
-  );
+  ]);
 
+  // Store SERPER results
   await supabaseClient
     .from('search_results')
     .insert({
       research_request_id: requestId,
       search_provider: 'serper',
       search_terms: literatureSchema.queries.map(q => q.queryText).join('\n'),
-      results: searchResults
+      results: serperResults
     });
 
-  return { literatureSchema, searchResults };
+  // Store PubMed results
+  await supabaseClient
+    .from('pubmed_search_results')
+    .insert({
+      research_request_id: requestId,
+      search_terms: literatureSchema.queries.map(q => q.queryText).join('\n'),
+      results: pubmedResults
+    });
+
+  return { 
+    literatureSchema, 
+    searchResults: [...serperResults.flat(), ...pubmedResults.flat()]
+  };
 }
