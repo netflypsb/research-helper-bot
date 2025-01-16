@@ -53,6 +53,15 @@ export const ResearchResults = () => {
 
   const handleDelete = async (reviewId: string) => {
     try {
+      // First delete related literature schemas
+      const { error: literatureError } = await supabase
+        .from("literature_required_schemas")
+        .delete()
+        .eq("research_request_id", reviewId);
+
+      if (literatureError) throw literatureError;
+
+      // Then delete proposal components
       const { error: componentsError } = await supabase
         .from("research_proposal_components")
         .delete()
@@ -60,6 +69,15 @@ export const ResearchResults = () => {
 
       if (componentsError) throw componentsError;
 
+      // Finally delete search results
+      const { error: searchError } = await supabase
+        .from("search_results")
+        .delete()
+        .eq("research_request_id", reviewId);
+
+      if (searchError) throw searchError;
+
+      // Now we can safely delete the research request
       const { error: requestError } = await supabase
         .from("research_requests")
         .delete()
