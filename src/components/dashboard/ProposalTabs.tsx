@@ -13,6 +13,7 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
       <TabsList className="inline-flex h-10 items-center justify-start p-1 bg-gray-50">
         <TabsTrigger value="all" className="px-4">All Components</TabsTrigger>
         <TabsTrigger value="title" className="px-4">Title & Objectives</TabsTrigger>
+        <TabsTrigger value="introduction" className="px-4">Introduction</TabsTrigger>
         <TabsTrigger value="literature" className="px-4">Literature Review</TabsTrigger>
         <TabsTrigger value="methodology" className="px-4">Methodology</TabsTrigger>
         <TabsTrigger value="abstract" className="px-4">Abstract</TabsTrigger>
@@ -42,6 +43,18 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
         />
       ) : (
         <p className="text-sm text-amber-600">No title and objectives available</p>
+      )}
+    </TabsContent>
+
+    <TabsContent value="introduction">
+      {components?.find(c => c.component_type === 'introduction')?.content ? (
+        <ProposalComponent
+          type="introduction"
+          content={components.find(c => c.component_type === 'introduction')?.content}
+          status="completed"
+        />
+      ) : (
+        <p className="text-sm text-amber-600">No introduction available</p>
       )}
     </TabsContent>
 

@@ -17,6 +17,8 @@ export const ProposalComponent = ({ type, content, status }: ProposalComponentPr
         return 'Methodology';
       case 'abstract':
         return 'Abstract';
+      case 'introduction':
+        return 'Introduction';
       default:
         return type;
     }

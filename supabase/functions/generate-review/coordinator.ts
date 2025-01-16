@@ -4,6 +4,7 @@ import { synthesizeLiteratureReview } from './literatureReview.ts';
 import { generateTitleAndObjectives } from './titleAndObjectives.ts';
 import { generateMethodology } from './methodology.ts';
 import { generateAbstract } from './abstract.ts';
+import { generateIntroduction } from './introduction.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 interface LiteratureRequiredSchema {
@@ -31,37 +32,6 @@ interface LiteratureRequiredSchema {
       }>;
     };
   }>;
-}
-
-async function generateLiteratureRequiredSchema(
-  description: string,
-  openrouterKey: string
-): Promise<LiteratureRequiredSchema> {
-  console.log('Generating Literature Required Schema for:', description);
-
-  const searchTerms = await generateSearchTerms(description, openrouterKey);
-  const queries = searchTerms.split('\n').map((term, index) => ({
-    id: `query_${index + 1}`,
-    queryText: term.trim(),
-    relatedSections: ['literature_review', 'methodology'],
-    contextTags: ['research', 'medical'],
-    priority: 'high' as const,
-    expectedFields: ['background', 'methods', 'findings'],
-  }));
-
-  return {
-    metadata: {
-      researchDescription: description,
-      creationDate: new Date().toISOString(),
-      sectionSchemas: [
-        { sectionName: 'literature_review', schemaUrl: 'literature_review_schema' },
-        { sectionName: 'methodology', schemaUrl: 'methodology_schema' },
-        { sectionName: 'title_and_objectives', schemaUrl: 'title_objectives_schema' },
-        { sectionName: 'abstract', schemaUrl: 'abstract_schema' },
-      ],
-    },
-    queries,
-  };
 }
 
 export async function coordinateResearchGeneration(
@@ -140,6 +110,24 @@ export async function coordinateResearchGeneration(
         research_request_id: requestId,
         component_type: 'title_and_objectives',
         content: titleAndObjectives,
+        status: 'completed'
+      });
+
+    // Generate introduction after title and literature review
+    console.log('Generating introduction...');
+    const introduction = await generateIntroduction(
+      description,
+      literatureReview,
+      titleAndObjectives,
+      apiKeys.openrouterKey
+    );
+
+    await supabaseClient
+      .from('research_proposal_components')
+      .insert({
+        research_request_id: requestId,
+        component_type: 'introduction',
+        content: introduction,
         status: 'completed'
       });
 
