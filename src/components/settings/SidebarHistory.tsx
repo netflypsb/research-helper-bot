@@ -19,6 +19,7 @@ interface SidebarHistoryProps {
 export const SidebarHistory = ({ onProposalClick, onDelete }: SidebarHistoryProps) => {
   const { toast } = useToast();
   const [proposals, setProposals] = useState<ResearchProposal[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadProposals();
@@ -52,7 +53,19 @@ export const SidebarHistory = ({ onProposalClick, onDelete }: SidebarHistoryProp
   };
 
   const handleDelete = async (proposalId: string) => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+
     try {
+      // First delete related literature schemas
+      const { error: literatureError } = await supabase
+        .from("literature_required_schemas")
+        .delete()
+        .eq("research_request_id", proposalId);
+
+      if (literatureError) throw literatureError;
+
+      // Then delete proposal components
       const { error: componentsError } = await supabase
         .from("research_proposal_components")
         .delete()
@@ -60,6 +73,15 @@ export const SidebarHistory = ({ onProposalClick, onDelete }: SidebarHistoryProp
 
       if (componentsError) throw componentsError;
 
+      // Then delete search results
+      const { error: searchError } = await supabase
+        .from("search_results")
+        .delete()
+        .eq("research_request_id", proposalId);
+
+      if (searchError) throw searchError;
+
+      // Finally delete the research request
       const { error: requestError } = await supabase
         .from("research_requests")
         .delete()
@@ -81,6 +103,8 @@ export const SidebarHistory = ({ onProposalClick, onDelete }: SidebarHistoryProp
         title: "Error",
         description: "Failed to delete research proposal",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -138,6 +162,7 @@ export const SidebarHistory = ({ onProposalClick, onDelete }: SidebarHistoryProp
                 size="icon"
                 onClick={() => handleDownload(proposal.id)}
                 className="text-primary"
+                disabled={isDeleting}
               >
                 <FileDown className="h-4 w-4" />
               </Button>
@@ -146,6 +171,7 @@ export const SidebarHistory = ({ onProposalClick, onDelete }: SidebarHistoryProp
                 size="icon"
                 onClick={() => handleDelete(proposal.id)}
                 className="text-destructive"
+                disabled={isDeleting}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
