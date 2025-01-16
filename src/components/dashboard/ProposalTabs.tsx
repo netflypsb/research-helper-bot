@@ -1,7 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProposalComponent } from "./ProposalComponent";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import ReactMarkdown from 'react-markdown';
 
 interface ProposalTabsProps {
   components: any[];
@@ -16,6 +15,7 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
         <TabsTrigger value="introduction" className="px-4">Introduction</TabsTrigger>
         <TabsTrigger value="literature" className="px-4">Literature Review</TabsTrigger>
         <TabsTrigger value="methodology" className="px-4">Methodology</TabsTrigger>
+        <TabsTrigger value="ethical" className="px-4">Ethical Considerations</TabsTrigger>
         <TabsTrigger value="abstract" className="px-4">Abstract</TabsTrigger>
       </TabsList>
       <ScrollBar orientation="horizontal" />
@@ -79,6 +79,18 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
         />
       ) : (
         <p className="text-sm text-amber-600">No methodology section available</p>
+      )}
+    </TabsContent>
+
+    <TabsContent value="ethical">
+      {components?.find(c => c.component_type === 'ethical_considerations')?.content ? (
+        <ProposalComponent
+          type="ethical_considerations"
+          content={components.find(c => c.component_type === 'ethical_considerations')?.content}
+          status="completed"
+        />
+      ) : (
+        <p className="text-sm text-amber-600">No ethical considerations available</p>
       )}
     </TabsContent>
 

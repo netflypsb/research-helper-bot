@@ -3,6 +3,7 @@ import { generateTitleAndObjectives } from '../titleAndObjectives.ts';
 import { generateMethodology } from '../methodology.ts';
 import { generateAbstract } from '../abstract.ts';
 import { generateIntroduction } from '../introduction.ts';
+import { generateEthicalConsiderations } from '../ethicalConsiderations.ts';
 import { ApiKeys } from '../types.ts';
 
 export async function generateProposalComponents(
@@ -76,7 +77,23 @@ export async function generateProposalComponents(
       status: 'completed'
     });
 
-  // Generate abstract
+  // Generate ethical considerations after methodology
+  const ethicalConsiderations = await generateEthicalConsiderations(
+    description,
+    methodology,
+    apiKeys.openrouterKey
+  );
+
+  await supabaseClient
+    .from('research_proposal_components')
+    .insert({
+      research_request_id: requestId,
+      component_type: 'ethical_considerations',
+      content: ethicalConsiderations,
+      status: 'completed'
+    });
+
+  // Generate abstract last
   const abstract = await generateAbstract(
     titleAndObjectives,
     literatureReview,
