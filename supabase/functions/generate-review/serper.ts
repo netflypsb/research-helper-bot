@@ -2,8 +2,16 @@ import { SearchResult } from './types.ts';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export async function performSearch(searchTerms: string, serperKey: string, retryCount = 0): Promise<SearchResult[]> {
-  console.log('Performing search with terms:', searchTerms, 'attempt:', retryCount + 1);
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 2000; // 2 seconds
+
+export async function performSearch(
+  searchTerms: string, 
+  serperKey: string, 
+  retryCount = 0,
+  retryDelay = INITIAL_RETRY_DELAY
+): Promise<SearchResult[]> {
+  console.log(`Performing search with terms: ${searchTerms}, attempt: ${retryCount + 1}`);
   
   if (!serperKey) {
     throw new Error('Serper API key is required');
@@ -24,10 +32,16 @@ export async function performSearch(searchTerms: string, serperKey: string, retr
       })
     });
 
-    if (response.status === 429 && retryCount < 3) {
-      console.log('Rate limit hit, retrying after delay...');
-      await delay(2000 * (retryCount + 1)); // Exponential backoff
-      return performSearch(searchTerms, serperKey, retryCount + 1);
+    // Handle rate limiting with exponential backoff
+    if (response.status === 429 && retryCount < MAX_RETRIES) {
+      console.log(`Rate limit hit, retrying in ${retryDelay}ms...`);
+      await delay(retryDelay);
+      return performSearch(
+        searchTerms, 
+        serperKey, 
+        retryCount + 1,
+        retryDelay * 2 // Exponential backoff
+      );
     }
 
     if (!response.ok) {
@@ -42,17 +56,17 @@ export async function performSearch(searchTerms: string, serperKey: string, retr
     }
 
     const data = await response.json();
-    console.log('Search results count:', data.organic?.length || 0);
+    console.log(`Search results count: ${data.organic?.length || 0}`);
 
-    const results = (data.organic || []).map((result: any) => ({
-      title: result.title || '',
-      link: result.link || '',
-      snippet: result.snippet || '',
-      position: result.position || 0,
-      date: result.date || null
-    })).filter((result: SearchResult) => 
-      result.snippet && result.snippet.length > 50
-    );
+    const results = (data.organic || [])
+      .map((result: any) => ({
+        title: result.title || '',
+        link: result.link || '',
+        snippet: result.snippet || '',
+        position: result.position || 0,
+        date: result.date || null
+      }))
+      .filter((result: SearchResult) => result.snippet && result.snippet.length > 50);
 
     if (results.length === 0) {
       console.warn('No valid search results found for terms:', searchTerms);
@@ -61,6 +75,12 @@ export async function performSearch(searchTerms: string, serperKey: string, retr
     return results;
   } catch (error) {
     console.error('Error performing search:', error);
+    
+    // If we've hit max retries, throw a user-friendly error
+    if (retryCount >= MAX_RETRIES) {
+      throw new Error('Search service is currently unavailable. Please try again in a few minutes.');
+    }
+    
     throw error;
   }
 }
