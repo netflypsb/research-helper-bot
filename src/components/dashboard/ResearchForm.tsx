@@ -21,6 +21,7 @@ export const ResearchForm = () => {
   const [description, setDescription] = useState("");
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const [wordCount, setWordCount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -56,6 +57,9 @@ export const ResearchForm = () => {
   };
 
   const handleGenerateReview = async () => {
+    // Prevent multiple submissions
+    if (isSubmitting) return;
+    
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       toast({
@@ -66,7 +70,9 @@ export const ResearchForm = () => {
       return;
     }
 
+    setIsSubmitting(true);
     setIsLoading(true);
+    
     try {
       // First create the research request
       const { data: requestData, error: requestError } = await supabase
@@ -121,6 +127,7 @@ export const ResearchForm = () => {
       });
     } finally {
       setIsLoading(false);
+      setIsSubmitting(false);
       setLoadingMessageIndex(0);
     }
   };
@@ -135,6 +142,7 @@ export const ResearchForm = () => {
             className="min-h-[400px] resize-none"
             value={description}
             onChange={handleTextChange}
+            disabled={isSubmitting}
           />
           <div className="absolute bottom-2 right-2 text-sm text-gray-500">
             {wordCount}/{WORD_LIMIT} words
@@ -143,7 +151,7 @@ export const ResearchForm = () => {
         <Button 
           className="w-full bg-primary hover:bg-sky-700"
           onClick={handleGenerateReview}
-          disabled={isLoading || wordCount === 0}
+          disabled={isLoading || wordCount === 0 || isSubmitting}
         >
           {isLoading ? LOADING_MESSAGES[loadingMessageIndex] : "Generate Research Proposal"}
         </Button>
