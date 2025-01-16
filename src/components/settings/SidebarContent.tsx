@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ApiKeysSettings } from "./ApiKeysSettings";
 import { SidebarHistory } from "./SidebarHistory";
 import { SidebarNewChat } from "./SidebarNewChat";

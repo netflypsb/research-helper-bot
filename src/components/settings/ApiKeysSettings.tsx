@@ -12,19 +12,14 @@ export const ApiKeysSettings = ({ useMedResearchKeys }: ApiKeysSettingsProps) =>
 
   useEffect(() => {
     if (useMedResearchKeys) {
-      // Load MedResearch API keys from Edge Function
-      const loadMedResearchKeys = async () => {
-        const { data, error } = await supabase.functions.invoke('get-medresearch-keys');
-        if (!error && data) {
-          setApiKeys({
-            openrouter_key: data.openrouter_key || '',
-            serp_key: data.serp_key || '',
-            serper_key: data.serper_key || '',
-          });
-        }
-      };
-      loadMedResearchKeys();
+      // When switching to MedResearch keys, reset the form
+      setApiKeys({
+        openrouter_key: "",
+        serp_key: "",
+        serper_key: "",
+      });
     } else {
+      // Load user's personal API keys
       loadApiKeys();
     }
   }, [useMedResearchKeys]);

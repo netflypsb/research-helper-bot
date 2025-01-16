@@ -38,6 +38,13 @@ export const useApiKeys = () => {
         serp_key: data.serp_key || "",
         serper_key: data.serper_key || "",
       });
+    } else {
+      // If no data exists, ensure the state is reset to empty strings
+      setApiKeys({
+        openrouter_key: "",
+        serp_key: "",
+        serper_key: "",
+      });
     }
   };
 
