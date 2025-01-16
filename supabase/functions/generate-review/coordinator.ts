@@ -6,6 +6,64 @@ import { generateMethodology } from './methodology.ts';
 import { generateAbstract } from './abstract.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
+interface LiteratureRequiredSchema {
+  metadata: {
+    researchDescription: string;
+    creationDate: string;
+    sectionSchemas: Array<{
+      sectionName: string;
+      schemaUrl: string;
+    }>;
+  };
+  queries: Array<{
+    id: string;
+    queryText: string;
+    relatedSections: string[];
+    contextTags: string[];
+    priority: 'high' | 'medium' | 'low';
+    expectedFields: string[];
+    results?: {
+      summary: string;
+      fullText?: string;
+      citations: Array<{
+        citationText: string;
+        url?: string;
+      }>;
+    };
+  }>;
+}
+
+async function generateLiteratureRequiredSchema(
+  description: string,
+  openrouterKey: string
+): Promise<LiteratureRequiredSchema> {
+  console.log('Generating Literature Required Schema for:', description);
+
+  const searchTerms = await generateSearchTerms(description, openrouterKey);
+  const queries = searchTerms.split('\n').map((term, index) => ({
+    id: `query_${index + 1}`,
+    queryText: term.trim(),
+    relatedSections: ['literature_review', 'methodology'],
+    contextTags: ['research', 'medical'],
+    priority: 'high' as const,
+    expectedFields: ['background', 'methods', 'findings'],
+  }));
+
+  return {
+    metadata: {
+      researchDescription: description,
+      creationDate: new Date().toISOString(),
+      sectionSchemas: [
+        { sectionName: 'literature_review', schemaUrl: 'literature_review_schema' },
+        { sectionName: 'methodology', schemaUrl: 'methodology_schema' },
+        { sectionName: 'title_and_objectives', schemaUrl: 'title_objectives_schema' },
+        { sectionName: 'abstract', schemaUrl: 'abstract_schema' },
+      ],
+    },
+    queries,
+  };
+}
+
 export async function coordinateResearchGeneration(
   description: string,
   userId: string,
@@ -20,24 +78,38 @@ export async function coordinateResearchGeneration(
   );
 
   try {
-    // Step 1: Generate search terms and perform search
-    console.log('Generating search terms...');
-    const searchTerms = await generateSearchTerms(description, apiKeys.openrouterKey);
+    // Step 1: Generate Literature Required Schema
+    console.log('Generating Literature Required Schema...');
+    const literatureSchema = await generateLiteratureRequiredSchema(description, apiKeys.openrouterKey);
     
-    console.log('Performing search with terms:', searchTerms);
-    const searchResults = await performSearch(searchTerms, apiKeys.serperKey);
-    
+    // Store the schema
+    await supabaseClient
+      .from('literature_required_schemas')
+      .insert({
+        research_request_id: requestId,
+        metadata: literatureSchema.metadata,
+        queries: literatureSchema.queries,
+      });
+
+    // Step 2: Perform search with structured queries
+    console.log('Performing structured search...');
+    const searchResults = await Promise.all(
+      literatureSchema.queries.map(query => 
+        performSearch(query.queryText, apiKeys.serperKey)
+      )
+    );
+
     // Store search results
     await supabaseClient
       .from('search_results')
       .insert({
         research_request_id: requestId,
         search_provider: 'serper',
-        search_terms: searchTerms,
+        search_terms: literatureSchema.queries.map(q => q.queryText).join('\n'),
         results: searchResults
       });
 
-    // Step 2: Generate literature review
+    // Step 3: Generate literature review with structured data
     console.log('Generating literature review...');
     const literatureReview = await synthesizeLiteratureReview(
       searchResults,
@@ -54,7 +126,7 @@ export async function coordinateResearchGeneration(
         status: 'completed'
       });
 
-    // Step 3: Generate title and objectives
+    // Step 4: Generate title and objectives using literature review
     console.log('Generating title and objectives...');
     const titleAndObjectives = await generateTitleAndObjectives(
       description,
@@ -71,7 +143,7 @@ export async function coordinateResearchGeneration(
         status: 'completed'
       });
 
-    // Step 4: Generate methodology
+    // Step 5: Generate methodology
     console.log('Generating methodology...');
     const methodology = await generateMethodology(
       description,
@@ -87,7 +159,7 @@ export async function coordinateResearchGeneration(
         status: 'completed'
       });
 
-    // Step 5: Generate abstract
+    // Step 6: Generate abstract
     console.log('Generating abstract...');
     const abstract = await generateAbstract(
       titleAndObjectives,

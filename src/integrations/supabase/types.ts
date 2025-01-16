@@ -63,6 +63,41 @@ export type Database = {
         }
         Relationships: []
       }
+      literature_required_schemas: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json
+          queries: Json
+          research_request_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata: Json
+          queries: Json
+          research_request_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json
+          queries?: Json
+          research_request_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "literature_required_schemas_research_request_id_fkey"
+            columns: ["research_request_id"]
+            isOneToOne: false
+            referencedRelation: "research_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       research_proposal_components: {
         Row: {
           component_type: string
@@ -209,7 +244,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      query_priority: "high" | "medium" | "low"
     }
     CompositeTypes: {
       [_ in never]: never

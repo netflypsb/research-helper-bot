@@ -1,12 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders, handleError } from './utils.ts';
-import { generateSearchTerms } from './searchTerms.ts';
-import { performSearch } from './serper.ts';
-import { synthesizeLiteratureReview } from './literatureReview.ts';
-import { generateTitleAndObjectives } from './titleAndObjectives.ts';
-import { generateAbstract } from './abstract.ts';
-import { generateMethodology } from './methodology.ts';
+import { coordinateResearchGeneration } from './coordinator.ts';
 import type { ResearchRequest, ApiKeys } from './types.ts';
 
 serve(async (req) => {
@@ -29,7 +24,6 @@ serve(async (req) => {
       console.log('Using MedResearch API keys');
       apiKeys = {
         openrouter_key: Deno.env.get('MEDRESEARCH_OPENROUTER_KEY') ?? '',
-        serp_key: Deno.env.get('MEDRESEARCH_SERP_KEY') ?? '',
         serper_key: Deno.env.get('MEDRESEARCH_SERPER_KEY') ?? '',
       };
 
@@ -37,7 +31,6 @@ serve(async (req) => {
       await supabaseClient.rpc('increment_api_key_usage', { user_id_param: userId });
     } else {
       console.log('Fetching user API keys');
-      // Fetch API keys
       const { data: userApiKeys, error: apiKeysError } = await supabaseClient
         .from('api_keys')
         .select('*')
@@ -73,102 +66,15 @@ serve(async (req) => {
 
     console.log('Starting research process...');
 
-    // Generate search terms and perform search
-    const searchTerms = await generateSearchTerms(description, apiKeys.openrouter_key);
-    console.log('Generated search terms:', searchTerms);
-
-    const searchResults = await performSearch(searchTerms, apiKeys.serper_key);
-    console.log('Search results retrieved:', searchResults.length);
-
-    // Generate literature review
-    const literatureReview = await synthesizeLiteratureReview(
-      searchResults,
+    await coordinateResearchGeneration(
       description,
-      apiKeys.openrouter_key
+      userId,
+      requestData.id,
+      {
+        openrouterKey: apiKeys.openrouter_key,
+        serperKey: apiKeys.serper_key ?? '',
+      }
     );
-    console.log('Literature review generated');
-
-    // Store literature review
-    const { error: litReviewError } = await supabaseClient
-      .from('research_proposal_components')
-      .insert({
-        research_request_id: requestData.id,
-        component_type: 'literature_review',
-        content: literatureReview,
-        status: 'completed'
-      });
-
-    if (litReviewError) throw litReviewError;
-
-    // Generate title and objectives
-    const titleAndObjectives = await generateTitleAndObjectives(
-      description,
-      literatureReview,
-      apiKeys.openrouter_key
-    );
-    console.log('Title and objectives generated');
-
-    // Store title and objectives
-    const { error: objectivesError } = await supabaseClient
-      .from('research_proposal_components')
-      .insert({
-        research_request_id: requestData.id,
-        component_type: 'title_and_objectives',
-        content: titleAndObjectives,
-        status: 'completed'
-      });
-
-    if (objectivesError) throw objectivesError;
-
-    // Generate methodology section
-    const methodology = await generateMethodology(
-      description,
-      apiKeys.openrouter_key
-    );
-    console.log('Methodology section generated');
-
-    // Store methodology
-    const { error: methodologyError } = await supabaseClient
-      .from('research_proposal_components')
-      .insert({
-        research_request_id: requestData.id,
-        component_type: 'methodology',
-        content: methodology,
-        status: 'completed'
-      });
-
-    if (methodologyError) throw methodologyError;
-
-    // Generate abstract using title, objectives and literature review
-    const abstract = await generateAbstract(
-      titleAndObjectives,
-      literatureReview,
-      apiKeys.openrouter_key
-    );
-    console.log('Abstract generated');
-
-    // Store abstract
-    const { error: abstractError } = await supabaseClient
-      .from('research_proposal_components')
-      .insert({
-        research_request_id: requestData.id,
-        component_type: 'abstract',
-        content: abstract,
-        status: 'completed'
-      });
-
-    if (abstractError) throw abstractError;
-
-    // Update research request status
-    const { error: updateError } = await supabaseClient
-      .from('research_requests')
-      .update({ 
-        status: 'completed',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', requestData.id);
-
-    if (updateError) throw updateError;
 
     return new Response(
       JSON.stringify({ 
