@@ -11,18 +11,9 @@ export const ApiKeysSettings = ({ useMedResearchKeys }: ApiKeysSettingsProps) =>
   const { apiKeys, setApiKeys, loadApiKeys, saveApiKeys, isLoading } = useApiKeys();
 
   useEffect(() => {
-    if (useMedResearchKeys) {
-      // When switching to MedResearch keys, reset the form
-      setApiKeys({
-        openrouter_key: "",
-        serp_key: "",
-        serper_key: "",
-      });
-    } else {
-      // Load user's personal API keys
-      loadApiKeys();
-    }
-  }, [useMedResearchKeys]);
+    // Load user's personal API keys regardless of toggle state
+    loadApiKeys();
+  }, []);
 
   return (
     <div className="space-y-4">

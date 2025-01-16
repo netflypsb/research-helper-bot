@@ -44,6 +44,11 @@ export const ApiKeysForm = ({ apiKeys, onChange, onSave, isLoading, disabled }: 
       >
         {isLoading ? "Saving..." : "Save API Keys"}
       </Button>
+      {disabled && (
+        <p className="text-sm text-muted-foreground text-center">
+          Using MedResearch AI Keys. Your saved API keys will be preserved.
+        </p>
+      )}
     </div>
   );
 };
