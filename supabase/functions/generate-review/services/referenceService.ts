@@ -10,19 +10,23 @@ export async function generateAndStoreReferences(
 ) {
   console.log('Starting reference generation for request:', requestId);
 
-  const systemPrompt = `You are a medical research reference expert. Create a structured list of references based on the provided literature review and research description. Return ONLY a valid JSON array where each reference contains these fields:
+  const systemPrompt = `You are a medical research reference expert. Your task is to return ONLY a raw JSON array of references. Do not include any explanatory text, markdown formatting, or code blocks.
 
+Each object in the array must strictly follow this format:
 {
-  "citation": "string (APA format)",
-  "doi": "string (optional)",
+  "citation": "string containing APA format citation",
+  "doi": "string or null",
   "year": number,
-  "authors": string[],
+  "authors": ["array", "of", "author", "names"],
   "journal": "string",
-  "relevanceScore": number (1-5),
+  "relevanceScore": number between 1 and 5,
   "keyFindings": "string"
 }
 
-Do not include any markdown formatting, code blocks, or explanatory text. Return only the JSON array.`;
+Remember:
+1. Return ONLY the JSON array
+2. No markdown, no \`\`\`json\`\`\` wrapper
+3. No explanations or additional text`;
 
   try {
     const content = await generateWithOpenRouter(
@@ -33,11 +37,26 @@ Do not include any markdown formatting, code blocks, or explanatory text. Return
     
     console.log('Raw OpenRouter response:', content);
     
-    // Clean up the response - remove any markdown formatting if present
-    const cleanedContent = content.replace(/\`\`\`json|\`\`\`|\n/g, '').trim();
+    // More aggressive cleaning of the response
+    let cleanedContent = content
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .replace(/^\s*\[\s*\n/, '[')  // Clean leading whitespace and newlines
+      .replace(/\s*\]\s*$/, ']')    // Clean trailing whitespace
+      .replace(/^\s*/, '')          // Remove any remaining leading whitespace
+      .replace(/\s*$/, '')          // Remove any remaining trailing whitespace
+      .trim();
+
+    // If the content doesn't start with [ and end with ], attempt to extract the JSON array
+    if (!cleanedContent.startsWith('[') || !cleanedContent.endsWith(']')) {
+      const match = cleanedContent.match(/\[[\s\S]*\]/);
+      if (match) {
+        cleanedContent = match[0];
+      }
+    }
+
     console.log('Cleaned content:', cleanedContent);
     
-    // Parse the cleaned JSON
     let references;
     try {
       references = JSON.parse(cleanedContent);
@@ -51,6 +70,13 @@ Do not include any markdown formatting, code blocks, or explanatory text. Return
     if (!Array.isArray(references)) {
       throw new Error('References must be an array');
     }
+
+    // Validate each reference object
+    references.forEach((ref, index) => {
+      if (!ref.citation || !ref.year || !Array.isArray(ref.authors) || !ref.journal) {
+        throw new Error(`Invalid reference object at index ${index}`);
+      }
+    });
 
     // Store references in the database
     await supabaseClient
