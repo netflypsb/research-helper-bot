@@ -5,6 +5,7 @@ import { coordinateResearchGeneration } from './coordinator.ts';
 import type { ResearchRequest, ApiKeys } from './types.ts';
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -18,13 +19,36 @@ serve(async (req) => {
     const { description, userId, useMedResearchKeys } = await req.json();
     console.log('Received request:', { description, userId, useMedResearchKeys });
 
+    if (!description || !userId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     let apiKeys: ApiKeys;
 
     if (useMedResearchKeys) {
       console.log('Using MedResearch API keys');
+      const openrouterKey = Deno.env.get('MEDRESEARCH_OPENROUTER_KEY');
+      const serperKey = Deno.env.get('MEDRESEARCH_SERPER_KEY');
+      
+      if (!openrouterKey || !serperKey) {
+        return new Response(
+          JSON.stringify({ error: 'MedResearch API keys not configured' }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
       apiKeys = {
-        openrouter_key: Deno.env.get('MEDRESEARCH_OPENROUTER_KEY') ?? '',
-        serper_key: Deno.env.get('MEDRESEARCH_SERPER_KEY') ?? '',
+        openrouter_key: openrouterKey,
+        serper_key: serperKey,
       };
 
       // Increment usage count
@@ -38,15 +62,30 @@ serve(async (req) => {
         .single();
 
       if (apiKeysError || !userApiKeys) {
-        console.error('API keys error:', apiKeysError);
-        throw new Error('API keys not found. Please ensure you have set up your OpenRouter API key in the settings.');
+        return new Response(
+          JSON.stringify({ 
+            error: 'API keys not found. Please ensure you have set up your OpenRouter API key in the settings.' 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
 
       apiKeys = userApiKeys;
     }
 
     if (!apiKeys.openrouter_key) {
-      throw new Error('OpenRouter API key is not set. Please add your OpenRouter API key in the settings.');
+      return new Response(
+        JSON.stringify({ 
+          error: 'OpenRouter API key is not set. Please add your OpenRouter API key in the settings.' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Create research request
@@ -61,7 +100,14 @@ serve(async (req) => {
       .single();
 
     if (requestError) {
-      throw requestError;
+      console.error('Error creating research request:', requestError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to create research request' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Add request to queue
@@ -76,7 +122,14 @@ serve(async (req) => {
       .single();
 
     if (queueError) {
-      throw queueError;
+      console.error('Error adding to queue:', queueError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to queue request' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Check rate limits for each API
@@ -88,42 +141,79 @@ serve(async (req) => {
       api_name_param: 'serper'
     });
 
-    // If we're under rate limits, process immediately
-    if (openrouterLimit && serperLimit) {
-      console.log('Processing request immediately - under rate limits');
-      await coordinateResearchGeneration(
-        description,
-        userId,
-        requestData.id,
-        {
-          openrouterKey: apiKeys.openrouter_key,
-          serperKey: apiKeys.serper_key ?? '',
+    try {
+      // If we're under rate limits, process immediately
+      if (openrouterLimit && serperLimit) {
+        console.log('Processing request immediately - under rate limits');
+        await coordinateResearchGeneration(
+          description,
+          userId,
+          requestData.id,
+          {
+            openrouterKey: apiKeys.openrouter_key,
+            serperKey: apiKeys.serper_key ?? '',
+          }
+        );
+
+        // Update queue status
+        await supabaseClient
+          .from('request_queue')
+          .update({ 
+            status: 'completed',
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', queueData.id);
+      } else {
+        console.log('Request queued - rate limits reached');
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          message: 'Research request submitted successfully',
+          requestId: requestData.id,
+          queueId: queueData.id,
+          status: openrouterLimit && serperLimit ? 'processing' : 'queued'
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
-
-      // Update queue status
+    } catch (error) {
+      console.error('Error in research generation:', error);
+      
+      // Update queue status to failed
       await supabaseClient
         .from('request_queue')
         .update({ 
-          status: 'completed',
+          status: 'failed',
+          error_message: error.message,
           completed_at: new Date().toISOString()
         })
         .eq('id', queueData.id);
-    } else {
-      console.log('Request queued - rate limits reached');
-    }
 
-    return new Response(
-      JSON.stringify({ 
-        message: 'Research request submitted successfully',
-        requestId: requestData.id,
-        queueId: queueData.id,
-        status: openrouterLimit && serperLimit ? 'processing' : 'queued'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to process research request',
+          details: error.message 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
   } catch (error) {
     console.error('Error in generate-review function:', error);
-    return handleError(error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });
