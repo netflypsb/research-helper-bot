@@ -7,7 +7,13 @@ import type { ResearchRequest, ApiKeys } from './types.ts';
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 204, 
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      }
+    });
   }
 
   try {
@@ -51,7 +57,6 @@ serve(async (req) => {
         serper_key: serperKey,
       };
 
-      // Increment usage count
       await supabaseClient.rpc('increment_api_key_usage', { user_id_param: userId });
     } else {
       console.log('Fetching user API keys');
