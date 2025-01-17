@@ -56,7 +56,7 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
           .from("research_proposal_references")
           .select("*")
           .eq("research_request_id", requests[0].id)
-          .single()
+          .maybeSingle() // Changed from .single() to .maybeSingle()
       ]);
 
       const allComponents = [
