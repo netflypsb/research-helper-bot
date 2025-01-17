@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProposalComponent } from "./ProposalComponent";
+import { ProposalReferences } from "./ProposalReferences";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface ProposalTabsProps {
@@ -17,6 +18,7 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
         <TabsTrigger value="methodology" className="px-4">Methodology</TabsTrigger>
         <TabsTrigger value="ethical" className="px-4">Ethical Considerations</TabsTrigger>
         <TabsTrigger value="abstract" className="px-4">Abstract</TabsTrigger>
+        <TabsTrigger value="references" className="px-4">References</TabsTrigger>
       </TabsList>
       <ScrollBar orientation="horizontal" />
     </ScrollArea>
@@ -104,6 +106,13 @@ export const ProposalTabs = ({ components }: ProposalTabsProps) => (
       ) : (
         <p className="text-sm text-amber-600">No abstract available</p>
       )}
+    </TabsContent>
+
+    <TabsContent value="references">
+      <ProposalReferences
+        references={components?.find(c => c.component_type === 'references')?.reference_data}
+        status={components?.find(c => c.component_type === 'references')?.status}
+      />
     </TabsContent>
   </Tabs>
 );

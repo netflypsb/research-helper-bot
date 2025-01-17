@@ -46,13 +46,30 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
       .limit(1);
 
     if (requests && requests.length > 0) {
-      const { data: components } = await supabase
-        .from("research_proposal_components")
-        .select("*")
-        .eq("research_request_id", requests[0].id)
-        .order('created_at', { ascending: true });
+      const [components, references] = await Promise.all([
+        supabase
+          .from("research_proposal_components")
+          .select("*")
+          .eq("research_request_id", requests[0].id)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from("research_proposal_references")
+          .select("*")
+          .eq("research_request_id", requests[0].id)
+          .single()
+      ]);
 
-      setComponents(components || []);
+      const allComponents = [
+        ...(components.data || []),
+        references.data ? {
+          id: 'references',
+          component_type: 'references',
+          reference_data: references.data.reference_data,
+          status: 'completed'
+        } : null
+      ].filter(Boolean);
+
+      setComponents(allComponents);
     }
   };
 
