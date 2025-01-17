@@ -10,17 +10,19 @@ export async function generateAndStoreReferences(
 ) {
   console.log('Starting reference generation for request:', requestId);
 
-  const systemPrompt = `You are a medical research reference expert. Create a structured list of references based on the provided literature review and research description. For each reference, provide:
+  const systemPrompt = `You are a medical research reference expert. Create a structured list of references based on the provided literature review and research description. Return ONLY a valid JSON array where each reference contains these fields:
 
-1. Citation in APA format
-2. DOI (if available)
-3. Publication year
-4. Authors
-5. Journal/Source
-6. Relevance score (1-5)
-7. Key findings relevant to the research
+{
+  "citation": "string (APA format)",
+  "doi": "string (optional)",
+  "year": number,
+  "authors": string[],
+  "journal": "string",
+  "relevanceScore": number (1-5),
+  "keyFindings": "string"
+}
 
-Format the output as a JSON array where each reference contains these fields.`;
+Do not include any markdown formatting, code blocks, or explanatory text. Return only the JSON array.`;
 
   try {
     const content = await generateWithOpenRouter(
@@ -29,10 +31,26 @@ Format the output as a JSON array where each reference contains these fields.`;
       apiKeys.openrouterKey
     );
     
-    console.log('Successfully generated references');
+    console.log('Raw OpenRouter response:', content);
     
-    // Parse the generated content as JSON
-    const references = JSON.parse(content);
+    // Clean up the response - remove any markdown formatting if present
+    const cleanedContent = content.replace(/\`\`\`json|\`\`\`|\n/g, '').trim();
+    console.log('Cleaned content:', cleanedContent);
+    
+    // Parse the cleaned JSON
+    let references;
+    try {
+      references = JSON.parse(cleanedContent);
+      console.log('Successfully parsed references:', references);
+    } catch (parseError) {
+      console.error('Error parsing references JSON:', parseError);
+      throw new Error(`Failed to parse references JSON: ${parseError.message}`);
+    }
+
+    // Validate the references structure
+    if (!Array.isArray(references)) {
+      throw new Error('References must be an array');
+    }
 
     // Store references in the database
     await supabaseClient
