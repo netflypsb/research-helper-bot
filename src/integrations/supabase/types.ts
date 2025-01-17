@@ -239,6 +239,38 @@ export type Database = {
           },
         ]
       }
+      research_proposal_references: {
+        Row: {
+          created_at: string | null
+          id: string
+          reference_data: Json
+          research_request_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reference_data: Json
+          research_request_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reference_data?: Json
+          research_request_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_proposal_references_research_request_id_fkey"
+            columns: ["research_request_id"]
+            isOneToOne: false
+            referencedRelation: "research_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       research_requests: {
         Row: {
           created_at: string | null

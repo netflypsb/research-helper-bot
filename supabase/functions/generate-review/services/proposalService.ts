@@ -4,6 +4,7 @@ import { generateMethodology } from '../methodology.ts';
 import { generateAbstract } from '../abstract.ts';
 import { generateIntroduction } from '../introduction.ts';
 import { generateEthicalConsiderations } from '../ethicalConsiderations.ts';
+import { generateAndStoreReferences } from './referenceService.ts';
 import { ApiKeys } from '../types.ts';
 
 export async function generateProposalComponents(
@@ -28,6 +29,15 @@ export async function generateProposalComponents(
       content: literatureReview,
       status: 'completed'
     });
+
+  // Generate references after literature review
+  await generateAndStoreReferences(
+    description,
+    literatureReview,
+    requestId,
+    apiKeys,
+    supabaseClient
+  );
 
   // Generate title and objectives
   const titleAndObjectives = await generateTitleAndObjectives(
