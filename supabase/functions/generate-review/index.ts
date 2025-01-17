@@ -64,22 +64,61 @@ serve(async (req) => {
       throw requestError;
     }
 
-    console.log('Starting research process...');
+    // Add request to queue
+    const { data: queueData, error: queueError } = await supabaseClient
+      .from('request_queue')
+      .insert({
+        user_id: userId,
+        research_request_id: requestData.id,
+        status: 'pending'
+      })
+      .select()
+      .single();
 
-    await coordinateResearchGeneration(
-      description,
-      userId,
-      requestData.id,
-      {
-        openrouterKey: apiKeys.openrouter_key,
-        serperKey: apiKeys.serper_key ?? '',
-      }
-    );
+    if (queueError) {
+      throw queueError;
+    }
+
+    // Check rate limits for each API
+    const { data: openrouterLimit } = await supabaseClient.rpc('check_rate_limit', {
+      api_name_param: 'openrouter'
+    });
+
+    const { data: serperLimit } = await supabaseClient.rpc('check_rate_limit', {
+      api_name_param: 'serper'
+    });
+
+    // If we're under rate limits, process immediately
+    if (openrouterLimit && serperLimit) {
+      console.log('Processing request immediately - under rate limits');
+      await coordinateResearchGeneration(
+        description,
+        userId,
+        requestData.id,
+        {
+          openrouterKey: apiKeys.openrouter_key,
+          serperKey: apiKeys.serper_key ?? '',
+        }
+      );
+
+      // Update queue status
+      await supabaseClient
+        .from('request_queue')
+        .update({ 
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', queueData.id);
+    } else {
+      console.log('Request queued - rate limits reached');
+    }
 
     return new Response(
       JSON.stringify({ 
-        message: 'Research proposal components generated successfully',
-        requestId: requestData.id
+        message: 'Research request submitted successfully',
+        requestId: requestData.id,
+        queueId: queueData.id,
+        status: openrouterLimit && serperLimit ? 'processing' : 'queued'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

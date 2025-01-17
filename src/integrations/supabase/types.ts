@@ -133,6 +133,74 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          api_name: string
+          id: string
+          last_request_time: string | null
+          request_count: number | null
+          reset_at: string | null
+        }
+        Insert: {
+          api_name: string
+          id?: string
+          last_request_time?: string | null
+          request_count?: number | null
+          reset_at?: string | null
+        }
+        Update: {
+          api_name?: string
+          id?: string
+          last_request_time?: string | null
+          request_count?: number | null
+          reset_at?: string | null
+        }
+        Relationships: []
+      }
+      request_queue: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          priority: number
+          research_request_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["request_status"]
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          priority?: number
+          research_request_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          priority?: number
+          research_request_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_queue_research_request_id_fkey"
+            columns: ["research_request_id"]
+            isOneToOne: false
+            referencedRelation: "research_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       research_proposal_components: {
         Row: {
           component_type: string
@@ -271,6 +339,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          api_name_param: string
+        }
+        Returns: boolean
+      }
+      get_next_request: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          research_request_id: string
+          user_id: string
+        }[]
+      }
       increment_api_key_usage: {
         Args: {
           user_id_param: string
@@ -280,6 +362,7 @@ export type Database = {
     }
     Enums: {
       query_priority: "high" | "medium" | "low"
+      request_status: "pending" | "processing" | "completed" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never

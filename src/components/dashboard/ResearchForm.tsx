@@ -22,6 +22,7 @@ export const ResearchForm = () => {
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const [wordCount, setWordCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [queuePosition, setQueuePosition] = useState<number | null>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -56,8 +57,21 @@ export const ResearchForm = () => {
     }
   };
 
+  const checkQueuePosition = async (queueId: string) => {
+    const { count } = await supabase
+      .from('request_queue')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending')
+      .lt('created_at', (await supabase
+        .from('request_queue')
+        .select('created_at')
+        .eq('id', queueId)
+        .single()).data?.created_at);
+
+    return count;
+  };
+
   const handleGenerateReview = async () => {
-    // Prevent multiple submissions
     if (isSubmitting) return;
     
     const { data: { session } } = await supabase.auth.getSession();
@@ -74,23 +88,8 @@ export const ResearchForm = () => {
     setIsLoading(true);
     
     try {
-      // First create the research request
-      const { data: requestData, error: requestError } = await supabase
-        .from("research_requests")
-        .insert({
-          user_id: session.user.id,
-          description,
-          status: "pending",
-        })
-        .select()
-        .single();
-
-      if (requestError) throw requestError;
-
-      // Get the useMedResearchKeys value from localStorage
       const useMedResearchKeys = localStorage.getItem("useMedResearchKeys") === "true";
 
-      // Then call the Edge Function
       const { data, error } = await supabase.functions.invoke("generate-review", {
         body: {
           description,
@@ -100,24 +99,28 @@ export const ResearchForm = () => {
       });
 
       if (error) {
-        // Check for specific error messages
         if (error.message.includes("rate limit")) {
           throw new Error("The search service is currently busy. Please try again in a few minutes.");
         }
         throw error;
       }
 
-      toast({
-        title: "Success",
-        description: "Research proposal generated successfully",
-      });
-
-      // Clear the description field
-      setDescription("");
-      setWordCount(0);
-
-      // Force a reload of the page to show the new review
-      window.location.reload();
+      if (data.status === 'queued') {
+        const position = await checkQueuePosition(data.queueId);
+        setQueuePosition(position);
+        toast({
+          title: "Request Queued",
+          description: `Your request is in queue position ${position + 1}. Please wait...`,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Research proposal generation started",
+        });
+        setDescription("");
+        setWordCount(0);
+        window.location.reload();
+      }
     } catch (error: any) {
       console.error("Generation error:", error);
       toast({
@@ -153,7 +156,11 @@ export const ResearchForm = () => {
           onClick={handleGenerateReview}
           disabled={isLoading || wordCount === 0 || isSubmitting}
         >
-          {isLoading ? LOADING_MESSAGES[loadingMessageIndex] : "Generate Research Proposal"}
+          {queuePosition !== null 
+            ? `Queued (Position ${queuePosition + 1})`
+            : isLoading 
+              ? LOADING_MESSAGES[loadingMessageIndex] 
+              : "Generate Research Proposal"}
         </Button>
       </div>
     </Card>
