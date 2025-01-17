@@ -7,6 +7,29 @@ import { generateEthicalConsiderations } from '../ethicalConsiderations.ts';
 import { generateAndStoreReferences } from './referenceService.ts';
 import { ApiKeys } from '../types.ts';
 
+async function insertProposalComponent(
+  supabaseClient: any,
+  requestId: string,
+  componentType: string,
+  content: string
+) {
+  console.log(`Inserting ${componentType} component`);
+  const { error } = await supabaseClient
+    .from('research_proposal_components')
+    .insert({
+      research_request_id: requestId,
+      component_type: componentType,
+      content: content,
+      status: 'completed'
+    });
+
+  if (error) {
+    console.error(`Error inserting ${componentType}:`, error);
+    throw error;
+  }
+  console.log(`Successfully inserted ${componentType}`);
+}
+
 export async function generateProposalComponents(
   description: string,
   searchResults: any[],
@@ -14,108 +37,76 @@ export async function generateProposalComponents(
   apiKeys: ApiKeys,
   supabaseClient: any
 ) {
-  // Generate literature review
-  const literatureReview = await synthesizeLiteratureReview(
-    searchResults,
-    description,
-    apiKeys.openrouterKey
-  );
+  try {
+    console.log('Starting proposal component generation');
 
-  await supabaseClient
-    .from('research_proposal_components')
-    .insert({
-      research_request_id: requestId,
-      component_type: 'literature_review',
-      content: literatureReview,
-      status: 'completed'
-    });
+    // Generate literature review
+    console.log('Generating literature review...');
+    const literatureReview = await synthesizeLiteratureReview(
+      searchResults,
+      description,
+      apiKeys.openrouterKey
+    );
+    await insertProposalComponent(supabaseClient, requestId, 'literature_review', literatureReview);
 
-  // Generate references after literature review
-  await generateAndStoreReferences(
-    description,
-    literatureReview,
-    requestId,
-    apiKeys,
-    supabaseClient
-  );
+    // Generate references after literature review
+    console.log('Generating references...');
+    await generateAndStoreReferences(
+      description,
+      literatureReview,
+      requestId,
+      apiKeys,
+      supabaseClient
+    );
 
-  // Generate title and objectives
-  const titleAndObjectives = await generateTitleAndObjectives(
-    description,
-    literatureReview,
-    apiKeys.openrouterKey
-  );
+    // Generate title and objectives
+    console.log('Generating title and objectives...');
+    const titleAndObjectives = await generateTitleAndObjectives(
+      description,
+      literatureReview,
+      apiKeys.openrouterKey
+    );
+    await insertProposalComponent(supabaseClient, requestId, 'title_and_objectives', titleAndObjectives);
 
-  await supabaseClient
-    .from('research_proposal_components')
-    .insert({
-      research_request_id: requestId,
-      component_type: 'title_and_objectives',
-      content: titleAndObjectives,
-      status: 'completed'
-    });
+    // Generate introduction
+    console.log('Generating introduction...');
+    const introduction = await generateIntroduction(
+      description,
+      literatureReview,
+      titleAndObjectives,
+      apiKeys.openrouterKey
+    );
+    await insertProposalComponent(supabaseClient, requestId, 'introduction', introduction);
 
-  // Generate introduction
-  const introduction = await generateIntroduction(
-    description,
-    literatureReview,
-    titleAndObjectives,
-    apiKeys.openrouterKey
-  );
+    // Generate methodology
+    console.log('Generating methodology...');
+    const methodology = await generateMethodology(
+      description,
+      apiKeys.openrouterKey
+    );
+    await insertProposalComponent(supabaseClient, requestId, 'methodology', methodology);
 
-  await supabaseClient
-    .from('research_proposal_components')
-    .insert({
-      research_request_id: requestId,
-      component_type: 'introduction',
-      content: introduction,
-      status: 'completed'
-    });
+    // Generate ethical considerations after methodology
+    console.log('Generating ethical considerations...');
+    const ethicalConsiderations = await generateEthicalConsiderations(
+      description,
+      methodology,
+      apiKeys.openrouterKey
+    );
+    await insertProposalComponent(supabaseClient, requestId, 'ethical_considerations', ethicalConsiderations);
 
-  // Generate methodology
-  const methodology = await generateMethodology(
-    description,
-    apiKeys.openrouterKey
-  );
+    // Generate abstract last
+    console.log('Generating abstract...');
+    const abstract = await generateAbstract(
+      titleAndObjectives,
+      literatureReview,
+      apiKeys.openrouterKey
+    );
+    await insertProposalComponent(supabaseClient, requestId, 'abstract', abstract);
 
-  await supabaseClient
-    .from('research_proposal_components')
-    .insert({
-      research_request_id: requestId,
-      component_type: 'methodology',
-      content: methodology,
-      status: 'completed'
-    });
-
-  // Generate ethical considerations after methodology
-  const ethicalConsiderations = await generateEthicalConsiderations(
-    description,
-    methodology,
-    apiKeys.openrouterKey
-  );
-
-  await supabaseClient
-    .from('research_proposal_components')
-    .insert({
-      research_request_id: requestId,
-      component_type: 'ethical_considerations',
-      content: ethicalConsiderations,
-      status: 'completed'
-    });
-
-  // Generate abstract last
-  const abstract = await generateAbstract(
-    titleAndObjectives,
-    literatureReview,
-    apiKeys.openrouterKey
-  );
-
-  await supabaseClient
-    .from('research_proposal_components')
-    .insert({
-      research_request_id: requestId,
-      component_type: 'abstract',
-      content: abstract,
-      status: 'completed'
-    });
+    console.log('Successfully generated all proposal components');
+  } catch (error) {
+    console.error('Error in generateProposalComponents:', error);
+    throw error;
+  }
 }

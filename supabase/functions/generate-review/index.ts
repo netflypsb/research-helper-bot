@@ -19,6 +19,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Received request to generate review');
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -28,15 +30,19 @@ serve(async (req) => {
     
     // Validate request
     await validateRequest(description, userId);
+    console.log('Request validated');
 
     // Create research request
     const requestData = await createResearchRequest(supabaseClient, userId, description);
+    console.log('Research request created:', requestData.id);
 
     // Handle API keys
     const apiKeys = await handleApiKeys(supabaseClient, userId, useMedResearchKeys);
+    console.log('API keys retrieved');
 
     // Create queue entry
     const queueData = await createQueueEntry(supabaseClient, userId, requestData.id);
+    console.log('Queue entry created:', queueData.id);
 
     try {
       // Check rate limits
@@ -84,6 +90,7 @@ serve(async (req) => {
       } else {
         // Handle queued state
         const position = await handleQueuePosition(supabaseClient, requestData, queueData);
+        console.log('Request queued at position:', position);
         
         return new Response(
           JSON.stringify({ 
