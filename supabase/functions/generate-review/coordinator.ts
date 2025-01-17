@@ -1,12 +1,12 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { generateAndStoreSearchResults } from './services/researchService.ts';
 import { generateProposalComponents } from './services/proposalService.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 export async function coordinateResearchGeneration(
   description: string,
   userId: string,
   requestId: string,
-  apiKeys: { openrouterKey: string; serperKey: string; pubmedKey: string }
+  apiKeys: { openrouterKey: string; serperKey: string }
 ) {
   console.log('Starting research generation process for request:', requestId);
   
@@ -16,7 +16,7 @@ export async function coordinateResearchGeneration(
   );
 
   try {
-    // Step 1: Generate and store search results (now includes both SERPER and PubMed)
+    // Step 1: Generate and store search results
     console.log('Performing literature search...');
     const { searchResults } = await generateAndStoreSearchResults(
       description,
