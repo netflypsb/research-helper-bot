@@ -56,7 +56,7 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
           .from("research_proposal_references")
           .select("*")
           .eq("research_request_id", requests[0].id)
-          .maybeSingle() // Changed from .single() to .maybeSingle()
+          .maybeSingle()
       ]);
 
       const allComponents = [
@@ -70,15 +70,25 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
       ].filter(Boolean);
 
       setComponents(allComponents);
+      console.log("Loaded components:", allComponents); // Debug log
     }
   };
 
   const renderPreview = () => {
-    const sections = ['title_and_objectives', 'abstract', 'literature_review', 'methodology'];
+    const sections = [
+      'title_and_objectives',
+      'abstract',
+      'introduction',
+      'literature_review',
+      'methodology',
+      'ethical_considerations'
+    ];
+    
     return (
       <div className="space-y-8">
         {sections.map((section) => {
           const component = components?.find(c => c.component_type === section);
+          console.log(`Rendering section ${section}:`, component); // Debug log
           if (!component?.content) return null;
           return (
             <ProposalComponent
