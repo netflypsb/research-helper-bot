@@ -17,21 +17,32 @@ const Header = () => {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (_event === 'TOKEN_REFRESHED') {
+        // Token was refreshed successfully
+        setIsAuthenticated(!!session);
+      } else if (_event === 'SIGNED_OUT') {
+        // User signed out
+        setIsAuthenticated(false);
+        navigate("/login");
+      } else {
+        // Other auth state changes
+        setIsAuthenticated(!!session);
+      }
       setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const checkUser = async () => {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        if (error.message.includes("token_refresh")) {
-          // Handle token refresh error by signing out
+        if (error.message.includes("refresh_token_not_found") || 
+            error.message.includes("token_refresh")) {
+          console.log("Token refresh error detected, signing out user");
           await handleSignOut();
           return;
         }
@@ -43,8 +54,8 @@ const Header = () => {
       console.error("Error checking auth state:", error);
       toast({
         variant: "destructive",
-        title: "Authentication Error",
-        description: "Please try logging in again",
+        title: "Session Expired",
+        description: "Please log in again",
       });
       // Force sign out on auth error
       await handleSignOut();
@@ -55,7 +66,7 @@ const Header = () => {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut({ scope: 'local' });
+      await supabase.auth.signOut();
       setIsAuthenticated(false);
       navigate("/login");
       toast({
