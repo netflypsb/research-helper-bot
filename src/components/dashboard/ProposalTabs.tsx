@@ -2,9 +2,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProposalComponent } from "./ProposalComponent";
 import { ProposalReferences } from "./ProposalReferences";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ProposalComponent as ProposalComponentType } from "./types";
 
 interface ProposalTabsProps {
-  components: any[];
+  components: ProposalComponentType[];
 }
 
 export const ProposalTabs = ({ components }: ProposalTabsProps) => (

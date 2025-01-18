@@ -1,13 +1,14 @@
 import ReactMarkdown from 'react-markdown';
+import { ProposalComponentType } from './types';
 
 interface ProposalComponentProps {
-  type: string;
+  type: ProposalComponentType;
   content: string | null;
   status: string;
 }
 
 export const ProposalComponent = ({ type, content, status }: ProposalComponentProps) => {
-  const getTitle = (type: string) => {
+  const getTitle = (type: ProposalComponentType) => {
     switch (type) {
       case 'literature_review':
         return 'Literature Review';
@@ -21,8 +22,8 @@ export const ProposalComponent = ({ type, content, status }: ProposalComponentPr
         return 'Introduction';
       case 'ethical_considerations':
         return 'Ethical Considerations';
-      default:
-        return type;
+      case 'references':
+        return 'References';
     }
   };
 
