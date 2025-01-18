@@ -90,14 +90,18 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
       }
 
       const allComponents = [
-        ...(componentsResult.data || []),
+        ...(componentsResult.data?.map(comp => ({
+          ...comp,
+          component_type: comp.component_type as ProposalComponentType
+        })) || []),
         referencesResult.data ? {
           id: 'references',
           component_type: 'references' as ProposalComponentType,
+          content: null,
           reference_data: referencesResult.data.reference_data,
           status: 'completed'
         } : null
-      ].filter(Boolean);
+      ].filter(Boolean) as IProposalComponent[];
 
       console.log("All loaded components:", allComponents);
       setComponents(allComponents);
@@ -147,11 +151,6 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
           
           if (!component) {
             console.log(`Section ${section} not found in components`);
-            return null;
-          }
-
-          if (!component.content) {
-            console.log(`Section ${section} has no content`);
             return null;
           }
 
