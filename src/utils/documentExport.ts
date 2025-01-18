@@ -17,13 +17,17 @@ const documentConfig = {
     },
   },
   defaultStyle: {
-    font: "Times New Roman",
-    size: 24, // 12pt
-    spacing: {
-      line: 480, // Double spacing
-      before: 240,
-      after: 240,
+    run: {
+      font: "Times New Roman",
+      size: 24, // 12pt
     },
+    paragraph: {
+      spacing: {
+        line: 480, // Double spacing
+        before: 240,
+        after: 240,
+      },
+    }
   }
 };
 
@@ -64,10 +68,9 @@ const createDocxParagraphs = (content: string) => {
 
     return new Paragraph({
       text: cleanText,
-      style: {
-        ...documentConfig.defaultStyle,
-        alignment: AlignmentType.LEFT,
-      },
+      alignment: AlignmentType.LEFT,
+      spacing: documentConfig.defaultStyle.paragraph.spacing,
+      style: "normal"
     });
   });
 };
@@ -86,12 +89,14 @@ export const exportToDoc = async (components: any[]) => {
             new Paragraph({
               text: getTitle(component.component_type),
               heading: HeadingLevel.HEADING_1,
-              style: {
-                ...documentConfig.defaultStyle,
+              alignment: AlignmentType.CENTER,
+              spacing: documentConfig.defaultStyle.paragraph.spacing,
+              style: "heading1",
+              run: {
+                ...documentConfig.defaultStyle.run,
                 size: 32, // 16pt for headings
                 bold: true,
-                alignment: AlignmentType.CENTER,
-              },
+              }
             }),
             ...createDocxParagraphs(component.content)
           ];
