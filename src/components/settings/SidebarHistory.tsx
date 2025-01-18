@@ -12,9 +12,9 @@ export const SidebarHistory = ({ onProposalClick, onDelete }: SidebarHistoryProp
   const { handleDelete, handleDownload, isDeleting } = useProposalActions(setProposals);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 overflow-hidden">
       <h3 className="text-lg font-medium">History</h3>
-      <div className="space-y-2">
+      <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-200px)] pr-2">
         {proposals.map((proposal) => (
           <HistoryItem
             key={proposal.id}

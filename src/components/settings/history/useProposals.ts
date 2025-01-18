@@ -43,17 +43,10 @@ export const useProposals = () => {
         })
       );
 
-      // Filter out any duplicate proposals based on description and timestamp
-      const uniqueProposals = proposalsWithComponents.reduce((acc: ResearchProposal[], current) => {
-        const isDuplicate = acc.find(
-          item => item.description === current.description && 
-          new Date(item.created_at).getTime() - new Date(current.created_at).getTime() < 1000
-        );
-        if (!isDuplicate) {
-          acc.push(current);
-        }
-        return acc;
-      }, []);
+      // Use a Map to track unique proposals by ID
+      const uniqueProposals = Array.from(
+        new Map(proposalsWithComponents.map(item => [item.id, item])).values()
+      );
       
       setProposals(uniqueProposals);
     }

@@ -28,12 +28,12 @@ export const HistoryItem = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between group">
-        <div className="flex items-center space-x-2">
+    <div className="space-y-2 w-full">
+      <div className="flex items-center justify-between group w-full min-w-0">
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1 hover:bg-gray-100 rounded"
+            className="p-1 hover:bg-gray-100 rounded flex-shrink-0"
           >
             {isExpanded ? (
               <ChevronUp className="h-4 w-4" />
@@ -43,17 +43,17 @@ export const HistoryItem = ({
           </button>
           <button
             onClick={() => onProposalClick(id)}
-            className="text-sm text-left hover:text-primary truncate max-w-[60%]"
+            className="text-sm text-left hover:text-primary truncate"
           >
             {description}
           </button>
         </div>
-        <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex space-x-1 flex-shrink-0">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onDownload(id)}
-            className="text-primary"
+            className="text-primary h-8 w-8"
             disabled={isDeleting}
           >
             <FileDown className="h-4 w-4" />
@@ -62,7 +62,7 @@ export const HistoryItem = ({
             variant="ghost"
             size="icon"
             onClick={() => onDelete(id)}
-            className="text-destructive"
+            className="text-destructive h-8 w-8"
             disabled={isDeleting}
           >
             <Trash2 className="h-4 w-4" />
