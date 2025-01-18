@@ -1,15 +1,7 @@
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
-import { useState } from "react";
-import { ApiKeysSettings } from "./ApiKeysSettings";
+import { useNavigate } from "react-router-dom";
 import { SidebarHistory } from "./SidebarHistory";
 import { SidebarNewChat } from "./SidebarNewChat";
-import { Switch } from "@/components/ui/switch";
 import { useApiKeyUsage } from "@/hooks/use-api-key-usage";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,28 +18,8 @@ export const SidebarContent = ({
   onNewChat, 
   onLogout 
 }: SidebarContentProps) => {
-  const [isApiKeysOpen, setIsApiKeysOpen] = useState(true);
   const { usesRemaining, isLoading } = useApiKeyUsage();
   const { toast } = useToast();
-  const [useMedResearchKeys, setUseMedResearchKeys] = useState(() => {
-    // Only allow MedResearch keys if there are uses remaining
-    const savedValue = localStorage.getItem("useMedResearchKeys") === "true";
-    return savedValue && (!usesRemaining || usesRemaining > 0);
-  });
-
-  const handleToggleMedResearch = (checked: boolean) => {
-    // Only allow enabling if there are uses remaining
-    if (checked && (!usesRemaining || usesRemaining <= 0)) {
-      toast({
-        title: "No uses remaining",
-        description: "You have used all your free MedResearchAI credits. Please subscribe or use your own API keys.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setUseMedResearchKeys(checked);
-    localStorage.setItem("useMedResearchKeys", checked.toString());
-  };
 
   const handleSubscribe = () => {
     toast({
@@ -69,20 +41,13 @@ export const SidebarContent = ({
 
         <div className="space-y-4">
           <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
-            <div className="flex items-center justify-between space-x-2">
-              <div>
-                <h3 className="text-sm font-medium">Use MedResearchAI Keys</h3>
-                {!isLoading && usesRemaining !== null && (
-                  <p className="text-xs text-slate-400">
-                    {usesRemaining} uses remaining
-                  </p>
-                )}
-              </div>
-              <Switch
-                checked={useMedResearchKeys}
-                onCheckedChange={handleToggleMedResearch}
-                disabled={useMedResearchKeys && (!usesRemaining || usesRemaining <= 0)}
-              />
+            <div>
+              <h3 className="text-sm font-medium">MedResearch AI Credits</h3>
+              {!isLoading && usesRemaining !== null && (
+                <p className="text-xs text-slate-400">
+                  {usesRemaining} free trials remaining
+                </p>
+              )}
             </div>
           </div>
 
@@ -90,7 +55,7 @@ export const SidebarContent = ({
             <div className="bg-slate-800/90 p-4 rounded-lg backdrop-blur-sm">
               <h3 className="text-lg font-medium mb-3">Premium Features</h3>
               <p className="text-sm text-slate-300 mb-4">
-                Get unlimited access to MedResearchAI and premium features
+                Get unlimited access to MedResearch AI and premium features
               </p>
               <Button 
                 onClick={handleSubscribe}
@@ -101,22 +66,6 @@ export const SidebarContent = ({
             </div>
           </div>
         </div>
-
-        <Collapsible open={isApiKeysOpen} onOpenChange={setIsApiKeysOpen}>
-          <div className="flex items-center justify-between bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
-            <h3 className="text-lg font-medium">API Keys</h3>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-white hover:bg-slate-700">
-                <ChevronDown className={`h-4 w-4 transition-transform ${isApiKeysOpen ? 'transform rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-          <CollapsibleContent>
-            <div className="pt-4">
-              <ApiKeysSettings useMedResearchKeys={useMedResearchKeys} />
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
       </div>
 
       <div className="p-4 border-t border-slate-700/50">

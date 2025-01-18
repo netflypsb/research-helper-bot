@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useApiKeyUsage } from "@/hooks/use-api-key-usage";
 
 const LOADING_MESSAGES = [
   "Generating...",
@@ -23,6 +24,7 @@ export const ResearchForm = () => {
   const [wordCount, setWordCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
+  const { usesRemaining, isLoading: isLoadingUsage } = useApiKeyUsage();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -84,17 +86,24 @@ export const ResearchForm = () => {
       return;
     }
 
+    if (!usesRemaining || usesRemaining <= 0) {
+      toast({
+        title: "Thank you for trying MedResearch AI",
+        description: "Please subscribe to continue using our services.",
+        className: "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setIsLoading(true);
     
     try {
-      const useMedResearchKeys = localStorage.getItem("useMedResearchKeys") === "true";
-
       const { data, error } = await supabase.functions.invoke("generate-review", {
         body: {
           description,
           userId: session.user.id,
-          useMedResearchKeys,
+          useMedResearchKeys: true,
         },
       });
 
@@ -154,13 +163,15 @@ export const ResearchForm = () => {
         <Button 
           className="w-full bg-primary hover:bg-sky-700"
           onClick={handleGenerateReview}
-          disabled={isLoading || wordCount === 0 || isSubmitting}
+          disabled={isLoading || wordCount === 0 || isSubmitting || isLoadingUsage || !usesRemaining || usesRemaining <= 0}
         >
           {queuePosition !== null 
             ? `Queued (Position ${queuePosition + 1})`
             : isLoading 
               ? LOADING_MESSAGES[loadingMessageIndex] 
-              : "Generate Research Proposal"}
+              : !usesRemaining || usesRemaining <= 0
+                ? "Subscribe to Generate More Proposals"
+                : "Generate Research Proposal"}
         </Button>
       </div>
     </Card>
