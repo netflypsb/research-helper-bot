@@ -5,6 +5,7 @@ import { ProposalTabs } from "./ProposalTabs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProposalComponent } from "./ProposalComponent";
+import { useToast } from "@/hooks/use-toast";
 
 interface ResearchOutputProps {
   viewMode: "sections" | "preview";
@@ -12,7 +13,9 @@ interface ResearchOutputProps {
 }
 
 export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) => {
+  const { toast } = useToast();
   const [components, setComponents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadLatestProposal();
@@ -35,18 +38,34 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
   }, []);
 
   const loadLatestProposal = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log("No session found");
+        return;
+      }
 
-    const { data: requests } = await supabase
-      .from("research_requests")
-      .select("*")
-      .eq("user_id", session.user.id)
-      .order('created_at', { ascending: false })
-      .limit(1);
+      const { data: requests, error: requestError } = await supabase
+        .from("research_requests")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-    if (requests && requests.length > 0) {
-      const [components, references] = await Promise.all([
+      if (requestError) {
+        console.error("Error fetching requests:", requestError);
+        throw requestError;
+      }
+
+      if (!requests || requests.length === 0) {
+        console.log("No requests found");
+        return;
+      }
+
+      console.log("Latest request:", requests[0]);
+
+      const [componentsResult, referencesResult] = await Promise.all([
         supabase
           .from("research_proposal_components")
           .select("*")
@@ -59,18 +78,53 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
           .maybeSingle()
       ]);
 
+      if (componentsResult.error) {
+        console.error("Error fetching components:", componentsResult.error);
+        throw componentsResult.error;
+      }
+
+      if (referencesResult.error) {
+        console.error("Error fetching references:", referencesResult.error);
+        throw referencesResult.error;
+      }
+
       const allComponents = [
-        ...(components.data || []),
-        references.data ? {
+        ...(componentsResult.data || []),
+        referencesResult.data ? {
           id: 'references',
           component_type: 'references',
-          reference_data: references.data.reference_data,
+          reference_data: referencesResult.data.reference_data,
           status: 'completed'
         } : null
       ].filter(Boolean);
 
+      console.log("All loaded components:", allComponents);
       setComponents(allComponents);
-      console.log("Loaded components:", allComponents); // Debug log
+
+      // Verify each expected section
+      const expectedSections = [
+        'title_and_objectives',
+        'abstract',
+        'introduction',
+        'literature_review',
+        'methodology',
+        'ethical_considerations'
+      ];
+
+      expectedSections.forEach(section => {
+        const found = allComponents.find(c => c.component_type === section);
+        console.log(`Section ${section} status:`, found ? 'Found' : 'Missing', found);
+      });
+
+    } catch (error) {
+      console.error("Error in loadLatestProposal:", error);
+      toast({
+        variant: "destructive",
+        title: "Error loading proposal",
+        description: "Failed to load the research proposal. Please try again.",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,8 +142,18 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
       <div className="space-y-8">
         {sections.map((section) => {
           const component = components?.find(c => c.component_type === section);
-          console.log(`Rendering section ${section}:`, component); // Debug log
-          if (!component?.content) return null;
+          console.log(`Rendering section ${section}:`, component);
+          
+          if (!component) {
+            console.log(`Section ${section} not found in components`);
+            return null;
+          }
+
+          if (!component.content) {
+            console.log(`Section ${section} has no content`);
+            return null;
+          }
+
           return (
             <ProposalComponent
               key={section}
@@ -117,7 +181,11 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
         </ToggleGroup>
       </div>
       
-      {viewMode === "sections" ? (
+      {loading ? (
+        <div className="text-center py-4">Loading proposal...</div>
+      ) : components.length === 0 ? (
+        <div className="text-center py-4 text-gray-500">No proposal data available</div>
+      ) : viewMode === "sections" ? (
         <ProposalTabs components={components} />
       ) : (
         <div className="overflow-auto">
