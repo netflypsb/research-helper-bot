@@ -14,4 +14,5 @@ export interface ProposalComponent {
   status: string;
   created_at?: string;
   updated_at?: string;
+  reference_data?: any; // Adding this field for references
 }

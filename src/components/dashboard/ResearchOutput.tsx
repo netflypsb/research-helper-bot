@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProposalComponent } from "./ProposalComponent";
 import { useToast } from "@/hooks/use-toast";
+import { ProposalComponent as IProposalComponent, ProposalComponentType } from "./types";
 
 interface ResearchOutputProps {
   viewMode: "sections" | "preview";
@@ -14,7 +15,7 @@ interface ResearchOutputProps {
 
 export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) => {
   const { toast } = useToast();
-  const [components, setComponents] = useState<any[]>([]);
+  const [components, setComponents] = useState<IProposalComponent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -92,7 +93,7 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
         ...(componentsResult.data || []),
         referencesResult.data ? {
           id: 'references',
-          component_type: 'references',
+          component_type: 'references' as ProposalComponentType,
           reference_data: referencesResult.data.reference_data,
           status: 'completed'
         } : null
@@ -102,7 +103,7 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
       setComponents(allComponents);
 
       // Verify each expected section
-      const expectedSections = [
+      const expectedSections: ProposalComponentType[] = [
         'title_and_objectives',
         'abstract',
         'introduction',
@@ -129,7 +130,7 @@ export const ResearchOutput = ({ viewMode, setViewMode }: ResearchOutputProps) =
   };
 
   const renderPreview = () => {
-    const sections = [
+    const sections: ProposalComponentType[] = [
       'title_and_objectives',
       'abstract',
       'introduction',
