@@ -41,6 +41,8 @@ const getTitle = (type: string) => {
       return 'Methodology';
     case 'abstract':
       return 'Abstract';
+    case 'references':
+      return 'References';
     default:
       return type;
   }
@@ -69,10 +71,29 @@ const createDocxParagraphs = (content: string) => {
     return new Paragraph({
       text: cleanText,
       alignment: AlignmentType.LEFT,
-      spacing: documentConfig.defaultStyle.paragraph.spacing,
-      style: "normal"
+      spacing: {
+        line: 480,
+        before: 240,
+        after: 240,
+      }
     });
   });
+};
+
+const createReferenceParagraphs = (references: any[]) => {
+  if (!references || !Array.isArray(references)) return [];
+
+  return references.map(ref => 
+    new Paragraph({
+      text: ref.citation,
+      alignment: AlignmentType.LEFT,
+      spacing: {
+        line: 480,
+        before: 240,
+        after: 240,
+      }
+    })
+  );
 };
 
 export const exportToDoc = async (components: any[]) => {
@@ -83,23 +104,43 @@ export const exportToDoc = async (components: any[]) => {
           page: documentConfig.pageSetup,
         },
         children: components.map(component => {
-          if (!component.content) return [];
+          if (!component.content && !component.reference_data) return [];
 
-          return [
-            new Paragraph({
-              text: getTitle(component.component_type),
-              heading: HeadingLevel.HEADING_1,
-              alignment: AlignmentType.CENTER,
-              spacing: documentConfig.defaultStyle.paragraph.spacing,
-              style: "heading1",
-              run: {
-                ...documentConfig.defaultStyle.run,
-                size: 32, // 16pt for headings
-                bold: true,
-              }
-            }),
-            ...createDocxParagraphs(component.content)
-          ];
+          // Handle references differently
+          if (component.component_type === 'references' && component.reference_data) {
+            return [
+              new Paragraph({
+                text: getTitle(component.component_type),
+                heading: HeadingLevel.HEADING_1,
+                alignment: AlignmentType.CENTER,
+                spacing: {
+                  line: 480,
+                  before: 240,
+                  after: 240,
+                }
+              }),
+              ...createReferenceParagraphs(component.reference_data)
+            ];
+          }
+
+          // Handle other components
+          if (component.content) {
+            return [
+              new Paragraph({
+                text: getTitle(component.component_type),
+                heading: HeadingLevel.HEADING_1,
+                alignment: AlignmentType.CENTER,
+                spacing: {
+                  line: 480,
+                  before: 240,
+                  after: 240,
+                }
+              }),
+              ...createDocxParagraphs(component.content)
+            ];
+          }
+
+          return [];
         }).flat()
       }]
     });
@@ -122,7 +163,7 @@ export const exportToPdf = (components: any[]) => {
   const fileName = `${getResearchTitle(components)}.pdf`;
   
   components.forEach((component) => {
-    if (!component.content) return;
+    if (!component.content && !component.reference_data) return;
 
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
@@ -132,23 +173,40 @@ export const exportToPdf = (components: any[]) => {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     
-    const cleanContent = component.content
-      .replace(/#{1,6}\s/g, '')
-      .replace(/\*\*(.*?)\*\*/g, '$1')
-      .replace(/\*(.*?)\*/g, '$1')
-      .replace(/`(.*?)`/g, '$1')
-      .replace(/\[(.*?)\]\((.*?)\)/g, '$1');
+    if (component.component_type === 'references' && component.reference_data) {
+      // Handle references
+      component.reference_data.forEach((ref: any) => {
+        const splitText = doc.splitTextToSize(ref.citation, pageWidth - 2 * margin);
+        splitText.forEach((line: string) => {
+          if (yPos > doc.internal.pageSize.getHeight() - margin) {
+            doc.addPage();
+            yPos = margin;
+          }
+          doc.text(line, margin, yPos);
+          yPos += 7;
+        });
+        yPos += 7;
+      });
+    } else if (component.content) {
+      // Handle other components
+      const cleanContent = component.content
+        .replace(/#{1,6}\s/g, '')
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/`(.*?)`/g, '$1')
+        .replace(/\[(.*?)\]\((.*?)\)/g, '$1');
 
-    const splitText = doc.splitTextToSize(cleanContent, pageWidth - 2 * margin);
-    
-    splitText.forEach((line: string) => {
-      if (yPos > doc.internal.pageSize.getHeight() - margin) {
-        doc.addPage();
-        yPos = margin;
-      }
-      doc.text(line, margin, yPos);
-      yPos += 7;
-    });
+      const splitText = doc.splitTextToSize(cleanContent, pageWidth - 2 * margin);
+      
+      splitText.forEach((line: string) => {
+        if (yPos > doc.internal.pageSize.getHeight() - margin) {
+          doc.addPage();
+          yPos = margin;
+        }
+        doc.text(line, margin, yPos);
+        yPos += 7;
+      });
+    }
     
     yPos += 15;
   });
