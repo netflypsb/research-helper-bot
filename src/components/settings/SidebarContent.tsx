@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ApiKeysSettings } from "./ApiKeysSettings";
 import { SidebarHistory } from "./SidebarHistory";
 import { SidebarNewChat } from "./SidebarNewChat";
@@ -37,55 +37,59 @@ export const SidebarContent = ({
   };
 
   return (
-    <div className="space-y-6 py-6">
-      <SidebarNewChat onClick={onNewChat} />
+    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-gradient-to-b from-slate-900 to-slate-800 text-white rounded-lg border border-slate-700/50 shadow-lg backdrop-blur-sm">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-800">
+        <SidebarNewChat onClick={onNewChat} />
 
-      <SidebarHistory 
-        onProposalClick={onProposalClick}
-        onDelete={onProposalDelete}
-      />
+        <SidebarHistory 
+          onProposalClick={onProposalClick}
+          onDelete={onProposalDelete}
+        />
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between space-x-2">
-          <div>
-            <h3 className="text-sm font-medium">Use MedResearchAI Keys</h3>
-            {!isLoading && usesRemaining !== null && usesRemaining < 3 && (
-              <p className="text-xs text-muted-foreground">
-                {usesRemaining} uses remaining
-              </p>
-            )}
+        <div className="space-y-4 bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
+          <div className="flex items-center justify-between space-x-2">
+            <div>
+              <h3 className="text-sm font-medium">Use MedResearchAI Keys</h3>
+              {!isLoading && usesRemaining !== null && usesRemaining < 3 && (
+                <p className="text-xs text-slate-400">
+                  {usesRemaining} uses remaining
+                </p>
+              )}
+            </div>
+            <Switch
+              checked={useMedResearchKeys}
+              onCheckedChange={handleToggleMedResearch}
+              disabled={!isLoading && (usesRemaining !== null && usesRemaining <= 0)}
+            />
           </div>
-          <Switch
-            checked={useMedResearchKeys}
-            onCheckedChange={handleToggleMedResearch}
-            disabled={!isLoading && (usesRemaining !== null && usesRemaining <= 0)}
-          />
         </div>
+
+        <Collapsible open={isApiKeysOpen} onOpenChange={setIsApiKeysOpen}>
+          <div className="flex items-center justify-between bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
+            <h3 className="text-lg font-medium">API Keys</h3>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-white hover:bg-slate-700">
+                <ChevronDown className={`h-4 w-4 transition-transform ${isApiKeysOpen ? 'transform rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent>
+            <div className="pt-4">
+              <ApiKeysSettings useMedResearchKeys={useMedResearchKeys} />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
-      <Collapsible open={isApiKeysOpen} onOpenChange={setIsApiKeysOpen}>
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">API Keys</h3>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <ChevronDown className={`h-4 w-4 transition-transform ${isApiKeysOpen ? 'transform rotate-180' : ''}`} />
-            </Button>
-          </CollapsibleTrigger>
-        </div>
-        <CollapsibleContent>
-          <div className="pt-4">
-            <ApiKeysSettings useMedResearchKeys={useMedResearchKeys} />
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-
-      <Button
-        variant="destructive"
-        className="w-full"
-        onClick={onLogout}
-      >
-        Logout
-      </Button>
+      <div className="p-4 border-t border-slate-700/50">
+        <Button
+          variant="destructive"
+          className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400"
+          onClick={onLogout}
+        >
+          Logout
+        </Button>
+      </div>
     </div>
   );
 };

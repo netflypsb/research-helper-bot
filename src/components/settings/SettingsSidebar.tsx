@@ -44,13 +44,17 @@ export const SettingsSidebar = () => {
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Settings className="h-4 w-4" />
+        <Button 
+          variant="outline" 
+          size="icon"
+          className="bg-slate-900 border-slate-700 hover:bg-slate-800 hover:border-slate-600 transition-all duration-200 shadow-lg hover:shadow-slate-700/20"
+        >
+          <Settings className="h-4 w-4 text-slate-300" />
         </Button>
       </SheetTrigger>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Settings</SheetTitle>
+      <SheetContent className="p-0 border-slate-800 bg-transparent backdrop-blur-xl w-[400px]">
+        <SheetHeader className="p-6 bg-slate-900/90 border-b border-slate-800">
+          <SheetTitle className="text-white">Settings</SheetTitle>
         </SheetHeader>
         <SidebarContent
           onProposalClick={handleProposalClick}

@@ -21,7 +21,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Header />
       <div className="container mx-auto px-4 py-8 flex-grow">
         <div className="flex justify-end mb-4">
