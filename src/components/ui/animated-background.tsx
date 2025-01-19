@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import { SVGProps } from 'react';
 
 interface AnimatedBackgroundProps {
   colors?: string[];
@@ -37,18 +38,19 @@ export const AnimatedBackground = ({
             <feColorMatrix in="blur" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
           </filter>
         </defs>
-        {colors.map((color, index) => (
-          <circle
-            key={index}
-            fill={color}
-            r="50"
-            className={`animate-blob${index + 1}`}
-            style={{
+        {colors.map((color, index) => {
+          const circleProps: SVGProps<SVGCircleElement> = {
+            key: index,
+            fill: color,
+            r: 50,
+            className: `animate-blob${index + 1}`,
+            style: {
               cx: `${Math.random() * 100}%`,
               cy: `${Math.random() * 100}%`,
-            }}
-          />
-        ))}
+            } as any // Using 'any' here because TypeScript doesn't recognize percentage strings for cx/cy
+          };
+          return <circle {...circleProps} />;
+        })}
       </svg>
     </div>
   );
