@@ -7,6 +7,7 @@ import { ArrowRight, FileText, Search, BookOpen, FileCheck } from "lucide-react"
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { renderCanvas } from "@/components/ui/canvas";
+import DisplayCards from "@/components/ui/display-cards";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -14,6 +15,54 @@ const Index = () => {
   useEffect(() => {
     renderCanvas();
   }, []);
+
+  const featureCards = [
+    {
+      icon: <FileText className="size-4 text-blue-300" />,
+      title: "Complete Research Proposal",
+      description: "Generate full proposals in minutes",
+      date: "Save months of work",
+      iconClassName: "text-blue-500",
+      titleClassName: "text-blue-500",
+      className: "[grid-area:stack] hover:-translate-y-10 before:absolute before:w-[100%] before:outline-1 before:rounded-xl before:outline-border before:h-[100%] before:content-[''] before:bg-blend-overlay before:bg-background/50 grayscale-[100%] hover:before:opacity-0 before:transition-opacity before:duration:700 hover:grayscale-0 before:left-0 before:top-0",
+    },
+    {
+      icon: <Search className="size-4 text-blue-300" />,
+      title: "Automated Literature Search",
+      description: "Search across multiple sources",
+      date: "Comprehensive coverage",
+      iconClassName: "text-blue-500",
+      titleClassName: "text-blue-500",
+      className: "[grid-area:stack] translate-x-12 translate-y-10 hover:-translate-y-1 before:absolute before:w-[100%] before:outline-1 before:rounded-xl before:outline-border before:h-[100%] before:content-[''] before:bg-blend-overlay before:bg-background/50 grayscale-[100%] hover:before:opacity-0 before:transition-opacity before:duration:700 hover:grayscale-0 before:left-0 before:top-0",
+    },
+    {
+      icon: <BookOpen className="size-4 text-blue-300" />,
+      title: "Literature Review",
+      description: "Analysis and gap identification",
+      date: "Research insights",
+      iconClassName: "text-blue-500",
+      titleClassName: "text-blue-500",
+      className: "[grid-area:stack] translate-x-24 translate-y-20 hover:translate-y-10",
+    },
+    {
+      icon: <Search className="size-4 text-blue-300" />,
+      title: "Research Methodology",
+      description: "Detailed study design & analysis",
+      date: "Rigorous methods",
+      iconClassName: "text-blue-500",
+      titleClassName: "text-blue-500",
+      className: "[grid-area:stack] translate-x-36 translate-y-30 hover:translate-y-20",
+    },
+    {
+      icon: <FileCheck className="size-4 text-blue-300" />,
+      title: "Professional Formatting",
+      description: "Publication-ready standards",
+      date: "Perfect presentation",
+      iconClassName: "text-blue-500",
+      titleClassName: "text-blue-500",
+      className: "[grid-area:stack] translate-x-48 translate-y-40 hover:translate-y-30",
+    },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 to-white">
@@ -47,7 +96,18 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Value Proposition and other sections remain unchanged */}
+        {/* Features Section */}
+        <div className="max-w-7xl mx-auto mb-16">
+          <h2 className="text-3xl font-bold text-sky-900 text-center mb-12">
+            Transform Your Research Process
+          </h2>
+          <div className="flex min-h-[400px] w-full items-center justify-center py-20">
+            <div className="w-full max-w-5xl">
+              <DisplayCards cards={featureCards} />
+            </div>
+          </div>
+        </div>
+
         {/* Value Proposition */}
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
           <Card className="p-8 hover:shadow-lg transition-shadow bg-white">
