@@ -1,8 +1,15 @@
+// Define proper types for our position object
+interface Position {
+  x: number;
+  y: number;
+}
+
 // @ts-ignore
 function n(e) {
   // @ts-ignore
   this.init(e || {});
 }
+
 n.prototype = {
   // @ts-ignore
   init: function (e) {
@@ -184,7 +191,7 @@ var ctx,
   // @ts-ignore
   f,
   e = 0,
-  pos = {},
+  pos: Position = { x: 0, y: 0 },  // Initialize pos with proper type and default values
   // @ts-ignore
   lines = [],
   E = {
@@ -195,6 +202,7 @@ var ctx,
     dampening: 0.025,
     tension: 0.99,
   };
+
 function Node() {
   this.x = 0;
   this.y = 0;
