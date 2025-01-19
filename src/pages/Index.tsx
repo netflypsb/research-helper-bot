@@ -7,6 +7,7 @@ import { ArrowRight, FileText, Search, BookOpen, FileCheck } from "lucide-react"
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { renderCanvas } from "@/components/ui/canvas";
+import { GlowEffect } from "@/components/ui/glow-effect";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -23,32 +24,32 @@ const Index = () => {
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16 flex-grow relative">
         <div className="max-w-4xl mx-auto text-center mb-16 relative z-10">
-          <div className="relative flex items-center justify-center whitespace-nowrap rounded-full border bg-white/80 backdrop-blur-sm px-3 py-1 text-xs mb-6 w-fit mx-auto">
-            <FileText className="h-4 w-4 mr-2" /> AI-Powered Research
-            <span className="ml-2 flex items-center font-semibold">
-              Beta <ArrowRight className="h-3 w-3 ml-1" />
-            </span>
-          </div>
-
-          <div className="relative mx-auto h-full max-w-7xl border border-sky-200/50 p-6 bg-white/50 backdrop-blur-sm rounded-lg [mask-image:radial-gradient(800rem_96rem_at_center,white,transparent)] md:px-12 md:py-20">
-            <h1 className="text-4xl md:text-5xl font-bold text-sky-900 mb-6 leading-tight">
-              Transform Your Medical Research Ideas into Complete Proposals
-            </h1>
-            <p className="text-xl text-sky-700 mb-8">
-              MedResearch AI converts your research concept into a comprehensive, publication-ready proposal in minutes, not months.
-            </p>
-            <Button 
-              className="bg-primary hover:bg-sky-700 text-lg px-8 py-6"
-              onClick={() => navigate("/signup")}
-            >
-              Start Your Research Proposal
-              <ArrowRight className="ml-2" />
-            </Button>
+          <div className="relative mx-auto h-full max-w-7xl border border-sky-200/50 p-6 bg-white/50 backdrop-blur-sm rounded-lg overflow-hidden">
+            <GlowEffect
+              colors={['#0284c7', '#38bdf8', '#7dd3fc', '#e0f2fe']}
+              mode="breathe"
+              blur="soft"
+              scale={1.05}
+              duration={3}
+            />
+            <div className="relative z-10">
+              <h1 className="text-4xl md:text-5xl font-bold text-sky-900 mb-6 leading-tight">
+                Transform Your Medical Research Ideas into Complete Proposals
+              </h1>
+              <p className="text-xl text-sky-700 mb-8">
+                MedResearch AI converts your research concept into a comprehensive, publication-ready proposal in minutes, not months.
+              </p>
+              <Button 
+                className="bg-primary hover:bg-sky-700 text-lg px-8 py-6"
+                onClick={() => navigate("/signup")}
+              >
+                Start Your Research Proposal
+                <ArrowRight className="ml-2" />
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Value Proposition and other sections remain unchanged */}
-        {/* Value Proposition */}
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
           <Card className="p-8 hover:shadow-lg transition-shadow bg-white">
             <h2 className="text-2xl font-semibold text-sky-900 mb-4">The Problem</h2>
