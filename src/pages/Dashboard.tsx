@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { SettingsSidebar } from "@/components/settings/SettingsSidebar";
+import { AnimatedBackground } from "@/components/ui/animated-background";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -21,15 +22,18 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <Header />
-      <div className="container mx-auto px-4 py-8 flex-grow">
-        <div className="flex justify-end mb-4">
-          <SettingsSidebar />
+    <div className="min-h-screen flex flex-col relative">
+      <AnimatedBackground />
+      <div className="relative z-10">
+        <Header />
+        <div className="container mx-auto px-4 py-8 flex-grow">
+          <div className="flex justify-end mb-4">
+            <SettingsSidebar />
+          </div>
+          <DashboardLayout />
         </div>
-        <DashboardLayout />
+        <Footer />
       </div>
-      <Footer />
     </div>
   );
 };

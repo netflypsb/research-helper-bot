@@ -145,23 +145,26 @@ export const ResearchForm = () => {
   };
 
   return (
-    <Card className="p-6">
+    <Card className="p-6 relative bg-white/80 backdrop-blur-sm">
       <h2 className="text-xl font-semibold text-sky-900 mb-6">Research Description</h2>
       <div className="space-y-4">
         <div className="relative">
-          <Textarea
-            placeholder="Enter your research description here..."
-            className="min-h-[400px] resize-none"
-            value={description}
-            onChange={handleTextChange}
-            disabled={isSubmitting}
-          />
-          <div className="absolute bottom-2 right-2 text-sm text-gray-500">
-            {wordCount}/{WORD_LIMIT} words
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-sky-400 via-blue-500 to-purple-600 rounded-lg animate-border" />
+          <div className="relative">
+            <Textarea
+              placeholder="Enter your research description here..."
+              className="min-h-[400px] resize-none bg-white/90 backdrop-blur-sm relative z-10"
+              value={description}
+              onChange={handleTextChange}
+              disabled={isSubmitting}
+            />
+            <div className="absolute bottom-2 right-2 text-sm text-gray-500 z-20">
+              {wordCount}/{WORD_LIMIT} words
+            </div>
           </div>
         </div>
         <Button 
-          className="w-full bg-primary hover:bg-sky-700"
+          className="w-full bg-primary hover:bg-sky-700 relative z-10"
           onClick={handleGenerateReview}
           disabled={isLoading || wordCount === 0 || isSubmitting || isLoadingUsage || !usesRemaining || usesRemaining <= 0}
         >

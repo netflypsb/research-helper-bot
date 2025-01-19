@@ -77,11 +77,68 @@ export default {
             "background-position": "right center",
           },
         },
+        blob1: {
+          "0%, 100%": {
+            transform: "translate(var(--tx-1, 0), var(--ty-1, 0))",
+          },
+          "33%": {
+            transform: "translate(var(--tx-2, 0), var(--ty-2, 0))",
+          },
+          "66%": {
+            transform: "translate(var(--tx-3, 0), var(--ty-3, 0))",
+          },
+        },
+        blob2: {
+          "0%, 100%": {
+            transform: "translate(var(--tx-2, 0), var(--ty-2, 0))",
+          },
+          "33%": {
+            transform: "translate(var(--tx-3, 0), var(--ty-3, 0))",
+          },
+          "66%": {
+            transform: "translate(var(--tx-4, 0), var(--ty-4, 0))",
+          },
+        },
+        blob3: {
+          "0%, 100%": {
+            transform: "translate(var(--tx-3, 0), var(--ty-3, 0))",
+          },
+          "33%": {
+            transform: "translate(var(--tx-4, 0), var(--ty-4, 0))",
+          },
+          "66%": {
+            transform: "translate(var(--tx-1, 0), var(--ty-1, 0))",
+          },
+        },
+        blob4: {
+          "0%, 100%": {
+            transform: "translate(var(--tx-4, 0), var(--ty-4, 0))",
+          },
+          "33%": {
+            transform: "translate(var(--tx-1, 0), var(--ty-1, 0))",
+          },
+          "66%": {
+            transform: "translate(var(--tx-2, 0), var(--ty-2, 0))",
+          },
+        },
+        border: {
+          "0%, 100%": {
+            "background-position": "0% 50%",
+          },
+          "50%": {
+            "background-position": "100% 50%",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "gradient-x": "gradient-x 15s ease infinite",
+        "blob1": "blob1 20s infinite",
+        "blob2": "blob2 20s infinite",
+        "blob3": "blob3 20s infinite",
+        "blob4": "blob4 20s infinite",
+        "border": "border 4s ease infinite",
       },
     },
   },
